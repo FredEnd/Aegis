@@ -266,8 +266,6 @@ namespace LocalDatabaseApp
             }
         } //Deletes the database
 
-
-
         public static void Database_Test_Input_sessions(string pcName, string ipAddress)
         {
             using (SQLiteConnection connection = new SQLiteConnection($"Data Source={dbFilePath};Version=3;"))

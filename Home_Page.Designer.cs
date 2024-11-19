@@ -144,7 +144,7 @@ namespace Aegis
             this.Session_maker.Size = new System.Drawing.Size(43, 34);
             this.Session_maker.TabIndex = 2;
             this.Session_maker.UseVisualStyleBackColor = true;
-            this.Session_maker.Click += new System.EventHandler(this.button1_Click);
+            this.Session_maker.Click += new System.EventHandler(this.Session_maker_Click);
             // 
             // Home_Page
             // 
