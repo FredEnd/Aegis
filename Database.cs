@@ -166,7 +166,6 @@ namespace LocalDatabaseApp
             }
         }
 
-
         public static List<(string SessionID, string CreatedAt)> LoadChatSessions()
         {
             List<(string SessionID, string CreatedAt)> chatSessions = new List<(string, string)>();
@@ -200,7 +199,6 @@ namespace LocalDatabaseApp
 
             return chatSessions;
         }
-
 
         public static async Task<List<(string MessageContent, string Direction, string SentAt, string UserID)>> GetMessagesBySessionAsync(string sessionId)
         {
@@ -247,7 +245,6 @@ namespace LocalDatabaseApp
             return messages;
         }
 
-
         public static void DeleteDb()
         {
 
@@ -268,6 +265,8 @@ namespace LocalDatabaseApp
                 Console.WriteLine("Database file does not exist.");
             }
         } //Deletes the database
+
+
 
         public static void Database_Test_Input_sessions(string pcName, string ipAddress)
         {
@@ -328,7 +327,6 @@ namespace LocalDatabaseApp
                 }
             }
         }
-
     }
 }
 
