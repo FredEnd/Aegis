@@ -8,6 +8,8 @@ using System.Windows.Forms;
 using NAudio;
 using NAudio.Wave;
 using System.Text;
+using System.Net.Sockets;
+using System.Collections.Generic;
 
 namespace Aegis_main
 {
@@ -69,6 +71,120 @@ namespace Aegis_main
             AES,
             RSA,
             DES
+        }
+
+        public static bool IsPortOpen(string ipAddress, int port, int timeout = 2000)
+        {
+            try
+            {
+                using (TcpClient client = new TcpClient())
+                {
+                    var result = client.BeginConnect(ipAddress, port, null, null);
+                    bool success = result.AsyncWaitHandle.WaitOne(timeout);
+
+                    if (!success)
+                    {
+                        return false;
+                    }
+
+                    client.EndConnect(result);
+                    return true;
+                }
+            }
+            catch (SocketException)
+            {
+                return false;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error: {ex.Message}");
+                return false;
+            }
+        }
+
+        public static async Task<Dictionary<string, List<int>>> ScanNetworkPortsAsync(string subnet, List<int> ports, int timeout = 2000)
+        {
+            Dictionary<string, List<int>> openPorts = new Dictionary<string, List<int>>();
+
+            List<Task> tasks = new List<Task>();
+            for (int i = 1; i <= 254; i++)
+            {
+                string ipAddress = $"{subnet}{i}";
+                tasks.Add(Task.Run(() =>
+                {
+                    List<int> openPortsForIP = new List<int>();
+                    foreach (int port in ports)
+                    {
+                        if (IsPortOpen(ipAddress, port, timeout))
+                        {
+                            openPortsForIP.Add(port);
+                        }
+                    }
+                    if (openPortsForIP.Count > 0)
+                    {
+                        lock (openPorts)
+                        {
+                            openPorts[ipAddress] = openPortsForIP;
+                        }
+                    }
+                }));
+            }
+
+            await Task.WhenAll(tasks);
+
+            return openPorts;
+        }
+
+        public static async Task StartServerAsync(int port)
+        {
+            TcpListener listener = new TcpListener(IPAddress.Any, port);
+            listener.Start();
+            Console.WriteLine($"Server listening on port {port}...");
+
+            while (true)
+            {
+                try
+                {
+                    TcpClient client = await listener.AcceptTcpClientAsync();
+                    Console.WriteLine("Client connected!");
+
+                    _ = HandleClientAsync(client);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Server error: {ex.Message}");
+                }
+            }
+        }
+
+        private static async Task HandleClientAsync(TcpClient client)
+        {
+            using (NetworkStream stream = client.GetStream())
+            {
+                byte[] buffer = new byte[1024];
+
+                while (true)
+                {
+                    try
+                    {
+                        int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
+                        if (bytesRead == 0) break;
+
+                        string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                        Console.WriteLine($"Received: {message}");
+
+                        byte[] response = Encoding.UTF8.GetBytes($"Echo: {message}");
+                        await stream.WriteAsync(response, 0, response.Length);
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error handling client: {ex.Message}");
+                        break;
+                    }
+                }
+            }
+
+            Console.WriteLine("Client disconnected.");
         }
 
         /*

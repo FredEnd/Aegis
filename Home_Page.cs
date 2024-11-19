@@ -351,16 +351,14 @@ namespace Aegis
     {
         public string SessionID { get; set; }
         public int HostUserID { get; set; }
-        public DateTime CreatedAt { get; set; }
         public int MaxConnections { get; set; }
         public int ConnectionCount { get; set; }
 
 
-        public Session(string sessionId, int hostUserId, DateTime createdAt, int maxConnections = 10, int connectionCount = 0)
+        public Session(string sessionId, int hostUserId, int maxConnections = 10, int connectionCount = 0)
         {
             SessionID = sessionId;
             HostUserID = hostUserId;
-            CreatedAt = createdAt;
             MaxConnections = maxConnections;
             ConnectionCount = connectionCount;
         }
