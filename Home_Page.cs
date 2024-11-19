@@ -250,7 +250,12 @@ namespace Aegis
             }
         }
 
-        private void button1_Click(object sender, EventArgs e)
+        private void Session_maker_Click(object sender, EventArgs e)
+        {
+
+        }
+
+        private void Session_Joiner_Click(object sender, EventArgs e)
         {
 
         }

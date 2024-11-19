@@ -132,6 +132,7 @@ namespace Aegis
             this.Session_Joiner.Size = new System.Drawing.Size(43, 34);
             this.Session_Joiner.TabIndex = 3;
             this.Session_Joiner.UseVisualStyleBackColor = true;
+            this.Session_Joiner.Click += new System.EventHandler(this.Session_Joiner_Click);
             // 
             // Session_maker
             // 
