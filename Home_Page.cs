@@ -349,18 +349,19 @@ namespace Aegis
 
     public class Session
     {
-        public string SessionID { get; set; }
-        public int HostUserID { get; set; }
-        public int MaxConnections { get; set; }
-        public int ConnectionCount { get; set; }
+        private string SessionID { get; set; }
+        private int HostUserID { get; set; }
+        private int MaxConnections { get; set; }
+        private int ConnectionCount { get; set; }
+        private int portNum { get; set; }
 
-
-        public Session(string sessionId, int hostUserId, int maxConnections = 10, int connectionCount = 0)
+        public Session(string sessionId, int hostUserId, int maxConnections = 10, int connectionCount = 0, int portNum = 0)
         {
-            SessionID = sessionId;
-            HostUserID = hostUserId;
-            MaxConnections = maxConnections;
-            ConnectionCount = connectionCount;
+            this.SessionID = sessionId;
+            this.HostUserID = hostUserId;
+            this.MaxConnections = maxConnections;
+            this.ConnectionCount = connectionCount;
+            this.portNum = portNum; 
         }
 
         public Session() { }

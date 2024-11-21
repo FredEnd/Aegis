@@ -73,64 +73,34 @@ namespace Aegis_main
             DES
         }
 
-        public static bool IsPortOpen(string ipAddress, int port, int timeout = 2000)
+        public static List<int> TestPorts(string ipAddress, int startPort, int endPort, int timeout = 100)
         {
-            try
+            var openPorts = new List<int>();
+            object lockObj = new object();
+
+            Parallel.For(startPort, endPort + 1, port =>
             {
                 using (TcpClient client = new TcpClient())
                 {
-                    var result = client.BeginConnect(ipAddress, port, null, null);
-                    bool success = result.AsyncWaitHandle.WaitOne(timeout);
-
-                    if (!success)
+                    try
                     {
-                        return false;
+                        var connectTask = client.ConnectAsync(ipAddress, port);
+                        bool connected = connectTask.Wait(timeout);
+                        if (connected)
+                        {
+                            lock (lockObj)
+                            {
+                                openPorts.Add(port);
+                            }
+                            Console.WriteLine($"Port {port} is open!");
+                        }
                     }
-
-                    client.EndConnect(result);
-                    return true;
+                    catch (Exception)
+                    {
+                        Console.WriteLine($"Port {port} is closed.");
+                    }
                 }
-            }
-            catch (SocketException)
-            {
-                return false;
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error: {ex.Message}");
-                return false;
-            }
-        }
-
-        public static async Task<Dictionary<string, List<int>>> ScanNetworkPortsAsync(string subnet, List<int> ports, int timeout = 2000)
-        {
-            Dictionary<string, List<int>> openPorts = new Dictionary<string, List<int>>();
-
-            List<Task> tasks = new List<Task>();
-            for (int i = 1; i <= 254; i++)
-            {
-                string ipAddress = $"{subnet}{i}";
-                tasks.Add(Task.Run(() =>
-                {
-                    List<int> openPortsForIP = new List<int>();
-                    foreach (int port in ports)
-                    {
-                        if (IsPortOpen(ipAddress, port, timeout))
-                        {
-                            openPortsForIP.Add(port);
-                        }
-                    }
-                    if (openPortsForIP.Count > 0)
-                    {
-                        lock (openPorts)
-                        {
-                            openPorts[ipAddress] = openPortsForIP;
-                        }
-                    }
-                }));
-            }
-
-            await Task.WhenAll(tasks);
+            });
 
             return openPorts;
         }

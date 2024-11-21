@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Aegis_main;
@@ -26,13 +27,16 @@ namespace Aegis
             DB.Database_Check();
             DB.Database_Test_Input_sessions(pcName, publicIP);
 
-            WaitAndOpenHome();
+            _ = WaitAndOpenHome();
         }
 
-        public async void WaitAndOpenHome()
+        public async Task WaitAndOpenHome()
         {
+            List<int> ports = await Task.Run(() => Mains.TestPorts(IPaddress, 0, 10000));
+
             Mains.play_notifercation();
             await Task.Delay(3000);
+
             this.Hide();
 
             Home_Page homePage = new Home_Page(IPaddress);
