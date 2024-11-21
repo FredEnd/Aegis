@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Aegis;
+using System;
 using System.Collections.Generic;
 using System.Data.SQLite;
 using System.IO;
@@ -33,6 +34,7 @@ namespace LocalDatabaseApp
                             SessionID TEXT PRIMARY KEY,
                             HostUserID INTEGER NOT NULL,
                             CreatedAt TIMESTAMP DEFAULT (datetime(CURRENT_TIMESTAMP, 'localtime')),
+                            Port INTEGER NOT NULL,
                             MaxConnections INTEGER DEFAULT 10,
                             ConnectionCount INTEGER DEFAULT 0,
                             FOREIGN KEY (HostUserID) REFERENCES Users(UserID)
@@ -293,12 +295,14 @@ namespace LocalDatabaseApp
                 for (int i = 0; i < 10; i++)
                 {
                     string sessionID = Guid.NewGuid().ToString();
+                    int Port = 80;
 
-                    string insertSessionDataQuery = "INSERT INTO Sessions (HostUserID, SessionID) VALUES (@HostUserID, @SessionID)";
+                    string insertSessionDataQuery = "INSERT INTO Sessions (HostUserID, SessionID, Port) VALUES (@HostUserID, @SessionID, @Port)";
                     using (SQLiteCommand command = new SQLiteCommand(insertSessionDataQuery, connection))
                     {
                         command.Parameters.AddWithValue("@HostUserID", userID);  // Use the actual UserID
                         command.Parameters.AddWithValue("@SessionID", sessionID);
+                        command.Parameters.AddWithValue("@Port", Port);
                         command.ExecuteNonQuery();
                         Console.WriteLine("SESSION DATA ADDED SUCCESSFULLY!");
                     }
@@ -322,6 +326,24 @@ namespace LocalDatabaseApp
                             command.ExecuteNonQuery();
                         }
                     }
+                }
+            }
+        }
+
+        public static void Create_Session(string sessionID, string HostID, int Port)
+        {
+            using (SQLiteConnection connection = new SQLiteConnection($"Data Source={dbFilePath};Version=3;"))
+            {
+                connection.Open();
+
+                string insertSessionDataQuery = "INSERT INTO Sessions (HostUserID, SessionID, Port) VALUES (@HostUserID, @SessionID, @Port)";
+                using (SQLiteCommand command = new SQLiteCommand(insertSessionDataQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@HostUserID", HostID);  // Use the actual UserID
+                    command.Parameters.AddWithValue("@SessionID", sessionID);
+                    command.Parameters.AddWithValue("@Port", Port);
+                    command.ExecuteNonQuery();
+                    Console.WriteLine("SESSION DATA ADDED SUCCESSFULLY!");
                 }
             }
         }

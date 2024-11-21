@@ -12,7 +12,7 @@ namespace Aegis
     public partial class Home_Page : Form
     {
         private FlowLayoutPanel flowLayoutPanel;
-
+        private Settings CurrentAppSettings;
 
         public Home_Page(string IPaddress)
         {
@@ -25,6 +25,7 @@ namespace Aegis
             {
                 InitializeComponent();
                 Settings appSettings = Initialise_settings();
+                CurrentAppSettings = appSettings;
 
                 this.FormClosing += new FormClosingEventHandler(Mains.Forms_FormClosing);
 
@@ -39,7 +40,7 @@ namespace Aegis
                 {
                     foreach (var session in chatSessions)
                     {
-                        ChatSessionButton newChat = new ChatSessionButton(session.SessionID, session.CreatedAt, appSettings);
+                        ChatSessionButton newChat = new ChatSessionButton(session.SessionID, session.CreatedAt, CurrentAppSettings);
                         newChat.InitializeButton();
                         Messages_Panel.Controls.Add(newChat.GetButton());
                     }
@@ -250,9 +251,41 @@ namespace Aegis
             }
         }
 
+        private void ApplyFontSizeOtherForms(Control control, int fontSize)
+        {
+            if (!(control is Label))
+            {
+                control.Font = new Font(control.Font.FontFamily, fontSize);
+            }
+
+            foreach (Control ControlElements in control.Controls)
+            {
+                ApplyFontSize(fontSize);
+            }
+        }
+
         private void Session_maker_Click(object sender, EventArgs e)
         {
+            Screen currentScreen = Screen.FromControl(Session_maker);
+            Session_Settings NewSessionSettings = new Session_Settings();
 
+            // Check the theme in the settings and apply the appropriate colors
+            if (CurrentAppSettings.Theme == "Dark")
+            {
+                NewSessionSettings.BackColor = System.Drawing.SystemColors.ControlDarkDark;
+                Console.WriteLine("MESSAGER THEME CHANGED TO DARK");
+            }
+            else
+            {
+                NewSessionSettings.BackColor = System.Drawing.SystemColors.ControlDark;
+                Console.WriteLine("MESSAGER THEME CHANGED TO LIGHT");
+            }
+
+            ApplyFontSizeOtherForms(NewSessionSettings, CurrentAppSettings.FontSize);
+
+            NewSessionSettings.StartPosition = FormStartPosition.Manual;
+            NewSessionSettings.Location = currentScreen.WorkingArea.Location;
+            NewSessionSettings.Show();
         }
 
         private void Session_Joiner_Click(object sender, EventArgs e)
@@ -350,12 +383,12 @@ namespace Aegis
     public class Session
     {
         private string SessionID { get; set; }
-        private int HostUserID { get; set; }
+        private string HostUserID { get; set; }
         private int MaxConnections { get; set; }
         private int ConnectionCount { get; set; }
         private int portNum { get; set; }
 
-        public Session(string sessionId, int hostUserId, int maxConnections = 10, int connectionCount = 0, int portNum = 0)
+        public Session(string sessionId, string hostUserId, int maxConnections = 10, int connectionCount = 0, int portNum = 0)
         {
             this.SessionID = sessionId;
             this.HostUserID = hostUserId;
@@ -365,6 +398,11 @@ namespace Aegis
         }
 
         public Session() { }
+
+        public void Add_Session()
+        {
+            DB.Create_Session(SessionID, HostUserID, portNum);
+        }
 
         public bool AddConnection()
         {
