@@ -32,14 +32,14 @@ namespace Aegis
 
         public async Task WaitAndOpenHome()
         {
-            List<int> ports = await Task.Run(() => Mains.TestPorts(IPaddress, 0, 10000));
+            List<int> ports = await Task.Run(() => Mains.TestPorts(IPaddress, 0, 1000));
 
             Mains.play_notifercation();
             await Task.Delay(3000);
 
             this.Hide();
 
-            Home_Page homePage = new Home_Page(IPaddress);
+            Home_Page homePage = new Home_Page(IPaddress, ports);
             Screen currentScreen = Screen.FromControl(this);
             homePage.StartPosition = FormStartPosition.Manual;
             homePage.Location = currentScreen.WorkingArea.Location;

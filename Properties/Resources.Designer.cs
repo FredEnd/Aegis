@@ -73,6 +73,16 @@ namespace Aegis.Properties {
         /// <summary>
         ///   Looks up a localized resource of type System.Drawing.Bitmap.
         /// </summary>
+        internal static System.Drawing.Bitmap _8666615_settings_icon {
+            get {
+                object obj = ResourceManager.GetObject("8666615_settings_icon", resourceCulture);
+                return ((System.Drawing.Bitmap)(obj));
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized resource of type System.Drawing.Bitmap.
+        /// </summary>
         internal static System.Drawing.Bitmap _8666647_heart_icon {
             get {
                 object obj = ResourceManager.GetObject("8666647_heart_icon", resourceCulture);

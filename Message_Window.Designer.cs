@@ -33,9 +33,10 @@ namespace Aegis
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(Message_Window));
             this.tableLayout_Messager = new System.Windows.Forms.TableLayoutPanel();
-            this.Message_Panel = new System.Windows.Forms.Panel();
             this.Session_Panel = new System.Windows.Forms.Panel();
+            this.Session_Label = new System.Windows.Forms.Label();
             this.Session_Settings = new System.Windows.Forms.Button();
+            this.Message_Panel = new System.Windows.Forms.Panel();
             this.MessageTable = new System.Windows.Forms.TableLayoutPanel();
             this.Input_Panel = new System.Windows.Forms.Panel();
             this.InputTablePanel = new System.Windows.Forms.TableLayoutPanel();
@@ -43,10 +44,9 @@ namespace Aegis
             this.Emoji_Button = new System.Windows.Forms.Button();
             this.File_Upload_Button = new System.Windows.Forms.Button();
             this.Send_button = new System.Windows.Forms.Button();
-            this.Session_Label = new System.Windows.Forms.Label();
             this.tableLayout_Messager.SuspendLayout();
-            this.Message_Panel.SuspendLayout();
             this.Session_Panel.SuspendLayout();
+            this.Message_Panel.SuspendLayout();
             this.Input_Panel.SuspendLayout();
             this.InputTablePanel.SuspendLayout();
             this.SuspendLayout();
@@ -73,16 +73,6 @@ namespace Aegis
             this.tableLayout_Messager.Size = new System.Drawing.Size(999, 562);
             this.tableLayout_Messager.TabIndex = 0;
             // 
-            // Message_Panel
-            // 
-            this.Message_Panel.AutoScroll = true;
-            this.Message_Panel.Controls.Add(this.MessageTable);
-            this.Message_Panel.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.Message_Panel.Location = new System.Drawing.Point(3, 65);
-            this.Message_Panel.Name = "Message_Panel";
-            this.Message_Panel.Size = new System.Drawing.Size(993, 419);
-            this.Message_Panel.TabIndex = 1;
-            // 
             // Session_Panel
             // 
             this.Session_Panel.Controls.Add(this.Session_Label);
@@ -93,9 +83,20 @@ namespace Aegis
             this.Session_Panel.Size = new System.Drawing.Size(993, 56);
             this.Session_Panel.TabIndex = 4;
             // 
+            // Session_Label
+            // 
+            this.Session_Label.AutoSize = true;
+            this.Session_Label.BackColor = System.Drawing.SystemColors.ActiveCaptionText;
+            this.Session_Label.Dock = System.Windows.Forms.DockStyle.Left;
+            this.Session_Label.Font = new System.Drawing.Font("Microsoft Sans Serif", 27.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.Session_Label.Location = new System.Drawing.Point(0, 0);
+            this.Session_Label.Name = "Session_Label";
+            this.Session_Label.Size = new System.Drawing.Size(0, 42);
+            this.Session_Label.TabIndex = 4;
+            // 
             // Session_Settings
             // 
-            this.Session_Settings.BackgroundImage = global::Aegis.Properties.Resources._8666681_edit_icon;
+            this.Session_Settings.BackgroundImage = global::Aegis.Properties.Resources._8666615_settings_icon;
             this.Session_Settings.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
             this.Session_Settings.Dock = System.Windows.Forms.DockStyle.Right;
             this.Session_Settings.Location = new System.Drawing.Point(950, 0);
@@ -103,6 +104,16 @@ namespace Aegis
             this.Session_Settings.Size = new System.Drawing.Size(43, 56);
             this.Session_Settings.TabIndex = 3;
             this.Session_Settings.UseVisualStyleBackColor = true;
+            // 
+            // Message_Panel
+            // 
+            this.Message_Panel.AutoScroll = true;
+            this.Message_Panel.Controls.Add(this.MessageTable);
+            this.Message_Panel.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.Message_Panel.Location = new System.Drawing.Point(3, 65);
+            this.Message_Panel.Name = "Message_Panel";
+            this.Message_Panel.Size = new System.Drawing.Size(993, 419);
+            this.Message_Panel.TabIndex = 1;
             // 
             // MessageTable
             // 
@@ -195,17 +206,6 @@ namespace Aegis
             this.Send_button.UseVisualStyleBackColor = true;
             this.Send_button.Click += new System.EventHandler(this.Send_button_Click);
             // 
-            // Session_Label
-            // 
-            this.Session_Label.AutoSize = true;
-            this.Session_Label.BackColor = System.Drawing.SystemColors.ActiveCaptionText;
-            this.Session_Label.Dock = System.Windows.Forms.DockStyle.Left;
-            this.Session_Label.Font = new System.Drawing.Font("Microsoft Sans Serif", 27.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.Session_Label.Location = new System.Drawing.Point(0, 0);
-            this.Session_Label.Name = "Session_Label";
-            this.Session_Label.Size = new System.Drawing.Size(0, 42);
-            this.Session_Label.TabIndex = 4;
-            // 
             // Message_Window
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
@@ -217,10 +217,10 @@ namespace Aegis
             this.Name = "Message_Window";
             this.Text = "Message_Window";
             this.tableLayout_Messager.ResumeLayout(false);
-            this.Message_Panel.ResumeLayout(false);
-            this.Message_Panel.PerformLayout();
             this.Session_Panel.ResumeLayout(false);
             this.Session_Panel.PerformLayout();
+            this.Message_Panel.ResumeLayout(false);
+            this.Message_Panel.PerformLayout();
             this.Input_Panel.ResumeLayout(false);
             this.Input_Panel.PerformLayout();
             this.InputTablePanel.ResumeLayout(false);

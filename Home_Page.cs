@@ -13,8 +13,10 @@ namespace Aegis
     {
         private FlowLayoutPanel flowLayoutPanel;
         private Settings CurrentAppSettings;
+        private List<int> Ports;
+        private string IPaddress;
 
-        public Home_Page(string IPaddress)
+        public Home_Page(string IPaddress, List<int> Ports)
         {
             if (IPaddress == "null")
             {
@@ -24,6 +26,10 @@ namespace Aegis
             else
             {
                 InitializeComponent();
+
+                this.Ports = Ports;
+                this.IPaddress = IPaddress;
+
                 Settings appSettings = Initialise_settings();
                 CurrentAppSettings = appSettings;
 
@@ -143,7 +149,7 @@ namespace Aegis
             themeSelector.SelectedIndexChanged += (s, e) =>
             {
                 appSettings.Theme = themeSelector.SelectedItem.ToString();
-                ApplyTheme(appSettings.Theme);
+                ApplyThemeHomePage(appSettings.Theme);
             };
             settingsPanel.Controls.Add(themeSelector);
 
@@ -222,7 +228,7 @@ namespace Aegis
 
 
         // method to apply the theme to my application 
-        private void ApplyTheme(string theme)
+        private void ApplyThemeHomePage(string theme)
         {
             // Implement theme application logic here
             if (theme == "Dark")
@@ -267,7 +273,7 @@ namespace Aegis
         private void Session_maker_Click(object sender, EventArgs e)
         {
             Screen currentScreen = Screen.FromControl(Session_maker);
-            Session_Settings NewSessionSettings = new Session_Settings();
+            Session_Settings NewSessionSettings = new Session_Settings(Ports, IPaddress);
 
             // Check the theme in the settings and apply the appropriate colors
             if (CurrentAppSettings.Theme == "Dark")

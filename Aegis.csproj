@@ -215,6 +215,7 @@
     <None Include="Resources\8666722_log_in_icon.ico" />
     <None Include="Resources\8666681_edit_icon.ico" />
     <None Include="Resources\8666546_user_plus_icon.ico" />
+    <Content Include="Resources\8666615_settings_icon.ico" />
     <Content Include="Resources\ico photo.ico" />
     <Content Include="Resources\Notification.mp3" />
   </ItemGroup>
