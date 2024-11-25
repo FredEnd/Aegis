@@ -104,6 +104,7 @@ namespace Aegis
             this.Session_Settings.Size = new System.Drawing.Size(43, 56);
             this.Session_Settings.TabIndex = 3;
             this.Session_Settings.UseVisualStyleBackColor = true;
+            this.Session_Settings.Click += new System.EventHandler(this.Session_Settings_Click);
             // 
             // Message_Panel
             // 

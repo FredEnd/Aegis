@@ -16,7 +16,7 @@ namespace Aegis
         private List<int> Ports;
         private string IPaddress;
         private string pcName;
-        //hello=
+        
 
 
         public Home_Page(string IPaddress, List<int> Ports, string pcName)
@@ -397,16 +397,14 @@ namespace Aegis
     {
         private string SessionID { get; set; }
         private string HostUserID { get; set; }
-        private int MaxConnections { get; set; }
-        private int ConnectionCount { get; set; }
+        private string Encryption {  get; set; }
         private int portNum { get; set; }
 
-        public Session(string sessionId, string hostUserId, int maxConnections = 10, int connectionCount = 0, int portNum = 0)
+        public Session(string sessionId, string hostUserId, string encryptionType, int portNum = 0)
         {
             this.SessionID = sessionId;
             this.HostUserID = hostUserId;
-            this.MaxConnections = maxConnections;
-            this.ConnectionCount = connectionCount;
+            this.Encryption = encryptionType;
             this.portNum = portNum; 
         }
 
@@ -414,28 +412,7 @@ namespace Aegis
 
         public void Add_Session()
         {
-            DB.Create_Session(SessionID, HostUserID, portNum);
-        }
-
-        public bool AddConnection()
-        {
-            if (ConnectionCount < MaxConnections)
-            {
-                ConnectionCount++;
-                return true;
-            }
-            return false;
-        }
-
-        public bool RemoveConnection()
-        {
-            if (ConnectionCount > 0)
-            {
-                ConnectionCount--;
-                return true;
-            }
-            return false;
+            DB.Create_Session(SessionID, HostUserID, Encryption, portNum);
         }
     }
-
 }

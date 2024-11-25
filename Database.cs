@@ -33,6 +33,7 @@ namespace LocalDatabaseApp
                         CREATE TABLE IF NOT EXISTS Sessions (
                             SessionID TEXT PRIMARY KEY,
                             HostUserID INTEGER NOT NULL,
+                            EncryotionType TEXT NOT NULL,
                             CreatedAt TIMESTAMP DEFAULT (datetime(CURRENT_TIMESTAMP, 'localtime')),
                             Port INTEGER NOT NULL,
                             MaxConnections INTEGER DEFAULT 10,
@@ -320,7 +321,7 @@ namespace LocalDatabaseApp
             }
         }
 
-        public static void Create_Session(string sessionID, string HostID, int Port)
+        public static void Create_Session(string sessionID, string HostID, string Encryption, int Port)
         {
             using (SQLiteConnection connection = new SQLiteConnection($"Data Source={dbFilePath};Version=3;"))
             {
@@ -339,11 +340,12 @@ namespace LocalDatabaseApp
                     }
                     else
                     {
-                        string insertSessionDataQuery = "INSERT INTO Sessions (HostUserID, SessionID, Port) VALUES (@HostUserID, @SessionID, @Port)";
+                        string insertSessionDataQuery = "INSERT INTO Sessions (HostUserID, SessionID, Port) VALUES (@HostUserID, @SessionID, @Encryption, @Port)";
                         using (SQLiteCommand insertCommand = new SQLiteCommand(insertSessionDataQuery, connection))
                         {
                             insertCommand.Parameters.AddWithValue("@HostUserID", HostID);
                             insertCommand.Parameters.AddWithValue("@SessionID", sessionID);
+                            insertCommand.Parameters.AddWithValue("@Encryption", Encryption);
                             insertCommand.Parameters.AddWithValue("@Port", Port);
                             insertCommand.ExecuteNonQuery();
                             Console.WriteLine("SESSION DATA ADDED SUCCESSFULLY!");
