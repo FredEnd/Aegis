@@ -15,13 +15,20 @@ namespace Aegis
     {
         private List<int> Ports;
         private string IPaddress;
+        private string pcName;
+        public Home_Page Home_Page;
+        public Settings Settings;
 
-        public Session_Settings(List<int> Ports, string IPaddress)
+
+        public Session_Settings(List<int> Ports, string IPaddress, string pcName, Home_Page home_page, Settings CurrentAppSettings)
         {
             InitializeComponent();
 
             this.Ports = Ports;
             this.IPaddress = IPaddress;
+            this.pcName = pcName;
+            this.Home_Page = home_page;
+            this.Settings = CurrentAppSettings;
 
             Ports.Sort();
 
@@ -42,14 +49,40 @@ namespace Aegis
             }
         }
 
+        public void Refresh_Sessions()
+        {
+            Home_Page.Messages_Panel.Controls.Clear();
+
+            var chatSessions = DB.LoadChatSessions();
+            if (chatSessions == null || chatSessions.Count == 0)
+            {
+                Console.WriteLine("NO SESSIONS LOADED: NULL OR EMPTY");
+            }
+            else
+            {
+                foreach (var session in chatSessions)
+                {
+                    ChatSessionButton newChat = new ChatSessionButton(session.SessionID, session.CreatedAt, Settings, pcName);
+                    newChat.InitializeButton();
+                    Home_Page.Messages_Panel.Controls.Add(newChat.GetButton());
+                }
+            }
+        }
+
         private void Create_Session_Click(object sender, EventArgs e)
         {
-            var MessageInput = SessionID_Input.Text;
-            Console.WriteLine(MessageInput);
+            var SessionIDInput = SessionID_Input.Text;
+            Console.WriteLine(SessionIDInput);
 
             var SelectedPort = PortsCombo.SelectedIndex;
 
             var EncryptionMethod = EncryptionCombo.SelectedIndex;
+
+            Session newSession = new Session(SessionIDInput, pcName, 10, 1, SelectedPort);
+
+            newSession.Add_Session();
+
+            Refresh_Sessions();
         }
     }
 }

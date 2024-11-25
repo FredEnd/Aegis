@@ -11,12 +11,14 @@ namespace Aegis
 {
     public partial class Home_Page : Form
     {
-        private FlowLayoutPanel flowLayoutPanel;
+        public FlowLayoutPanel flowLayoutPanel;
         private Settings CurrentAppSettings;
         private List<int> Ports;
         private string IPaddress;
+        private string pcName;
 
-        public Home_Page(string IPaddress, List<int> Ports)
+
+        public Home_Page(string IPaddress, List<int> Ports, string pcName)
         {
             if (IPaddress == "null")
             {
@@ -29,6 +31,7 @@ namespace Aegis
 
                 this.Ports = Ports;
                 this.IPaddress = IPaddress;
+                this.pcName = pcName;
 
                 Settings appSettings = Initialise_settings();
                 CurrentAppSettings = appSettings;
@@ -36,6 +39,7 @@ namespace Aegis
                 this.FormClosing += new FormClosingEventHandler(Mains.Forms_FormClosing);
 
                 flowLayoutPanel = new FlowLayoutPanel();
+
 
                 var chatSessions = DB.LoadChatSessions();
                 if (chatSessions == null || chatSessions.Count == 0)
@@ -46,13 +50,14 @@ namespace Aegis
                 {
                     foreach (var session in chatSessions)
                     {
-                        ChatSessionButton newChat = new ChatSessionButton(session.SessionID, session.CreatedAt, CurrentAppSettings);
+                        ChatSessionButton newChat = new ChatSessionButton(session.SessionID, session.CreatedAt, CurrentAppSettings, pcName);
                         newChat.InitializeButton();
                         Messages_Panel.Controls.Add(newChat.GetButton());
                     }
                 }
             }
         }
+
 
         private Settings Initialise_settings()
         {
@@ -226,7 +231,6 @@ namespace Aegis
             }
         }
 
-
         // method to apply the theme to my application 
         private void ApplyThemeHomePage(string theme)
         {
@@ -273,7 +277,7 @@ namespace Aegis
         private void Session_maker_Click(object sender, EventArgs e)
         {
             Screen currentScreen = Screen.FromControl(Session_maker);
-            Session_Settings NewSessionSettings = new Session_Settings(Ports, IPaddress);
+            Session_Settings NewSessionSettings = new Session_Settings(Ports, IPaddress, pcName, this, CurrentAppSettings);
 
             // Check the theme in the settings and apply the appropriate colors
             if (CurrentAppSettings.Theme == "Dark")
@@ -314,13 +318,15 @@ namespace Aegis
         private string createdAt;
         private Settings appSettings;
         private Button sessionButton;
+        private string UserID;
 
-        public ChatSessionButton(string sessionID, string createdAt,Settings settings)
+        public ChatSessionButton(string sessionID, string createdAt,Settings settings, string UserID)
         {
             // initalise the button styling 
             this.sessionID = sessionID;
             this.createdAt = createdAt;
             this.appSettings = settings;
+            this.UserID = UserID;
             InitializeButton();
         }
 
@@ -338,7 +344,7 @@ namespace Aegis
         public void OpenSessionForm()
         {
             Screen currentScreen = Screen.FromControl(sessionButton);
-            Message_Window sessionForm = new Message_Window(sessionID);
+            Message_Window sessionForm = new Message_Window(sessionID, UserID);
 
             // Check the theme in the settings and apply the appropriate colors
             if (appSettings.Theme == "Dark")

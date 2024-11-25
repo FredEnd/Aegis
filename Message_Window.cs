@@ -16,11 +16,13 @@ namespace Aegis
     {
         private FlowLayoutPanel flowLayoutPanel;
         private readonly string sessionId;
+        public string UserID;
 
-        public Message_Window(string sessionId)
+        public Message_Window(string sessionId, string UserID)
         {
             InitializeComponent();
             this.sessionId = sessionId;
+            this.UserID = UserID;
             _ = StartUpMessages();
         }
 
@@ -147,7 +149,7 @@ namespace Aegis
             var MessageInput = Input_Box.Text;
             Console.WriteLine(MessageInput);
 
-            await DB.NewMessageFromClientAsync(MessageInput, sessionId);
+            await DB.NewMessageFromClientAsync(MessageInput, sessionId, UserID);
             Console.WriteLine("SUCCESSFULLY WRITTEN MESSAGE");
 
             Input_Box.Text = null;

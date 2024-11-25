@@ -172,11 +172,11 @@ namespace Aegis
         #endregion
         private System.Windows.Forms.Label Messages_Label;
         private System.Windows.Forms.Label Settings_Label;
-        private System.Windows.Forms.Panel Messages_Panel;
+        public System.Windows.Forms.Panel Messages_Panel;
         private System.Windows.Forms.Panel Settings_Panel;
-        private System.Windows.Forms.TableLayoutPanel tableLayoutPanel;
         private Button Session_maker;
         private Panel Message_Label_Panel;
         private Button Session_Joiner;
+        public TableLayoutPanel tableLayoutPanel;
     }
 }

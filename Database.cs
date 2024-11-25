@@ -128,7 +128,7 @@ namespace LocalDatabaseApp
             return allData.ToString();
         } //Recalls all of the information form the database
 
-        public static async Task NewMessageFromClientAsync(string messageInput, string sessionID)
+        public static async Task NewMessageFromClientAsync(string messageInput, string sessionID, string ClientID)
         {
             try
             {
@@ -136,16 +136,6 @@ namespace LocalDatabaseApp
                 {
                     await connection.OpenAsync();
 
-                    // Retrieve the UserID for the current PC
-                    long userID;
-                    string pcName = Environment.MachineName;
-                    using (SQLiteCommand userCommand = new SQLiteCommand("SELECT UserID FROM Users WHERE PC_NAME = @PCName", connection))
-                    {
-                        userCommand.Parameters.AddWithValue("@PCName", pcName);
-                        userID = (long)(await userCommand.ExecuteScalarAsync());
-                    }
-
-                    // Insert the new message into the Messages table
                     string direction = "sent";
                     string insertMessageDataQuery = @"
                 INSERT INTO Messages (SessionID, UserID, Message_Content, Direction) 
@@ -154,7 +144,7 @@ namespace LocalDatabaseApp
                     using (SQLiteCommand command = new SQLiteCommand(insertMessageDataQuery, connection))
                     {
                         command.Parameters.AddWithValue("@SessionID", sessionID);
-                        command.Parameters.AddWithValue("@UserID", userID);
+                        command.Parameters.AddWithValue("@UserID", ClientID);
                         command.Parameters.AddWithValue("@MessageContent", messageInput);
                         command.Parameters.AddWithValue("@Direction", direction);
 
@@ -336,14 +326,29 @@ namespace LocalDatabaseApp
             {
                 connection.Open();
 
-                string insertSessionDataQuery = "INSERT INTO Sessions (HostUserID, SessionID, Port) VALUES (@HostUserID, @SessionID, @Port)";
-                using (SQLiteCommand command = new SQLiteCommand(insertSessionDataQuery, connection))
+                string checkSessionQuery = "SELECT COUNT(*) FROM Sessions WHERE SessionID = @SessionID";
+                using (SQLiteCommand checkCommand = new SQLiteCommand(checkSessionQuery, connection))
                 {
-                    command.Parameters.AddWithValue("@HostUserID", HostID);  // Use the actual UserID
-                    command.Parameters.AddWithValue("@SessionID", sessionID);
-                    command.Parameters.AddWithValue("@Port", Port);
-                    command.ExecuteNonQuery();
-                    Console.WriteLine("SESSION DATA ADDED SUCCESSFULLY!");
+                    checkCommand.Parameters.AddWithValue("@SessionID", sessionID);
+                    long count = (long)checkCommand.ExecuteScalar();
+
+                    if (count > 0)
+                    {
+                        MessageBox.Show($"A session with ID '{sessionID}' already exists. Cannot add duplicate session. Please try again...");
+                        return;
+                    }
+                    else
+                    {
+                        string insertSessionDataQuery = "INSERT INTO Sessions (HostUserID, SessionID, Port) VALUES (@HostUserID, @SessionID, @Port)";
+                        using (SQLiteCommand insertCommand = new SQLiteCommand(insertSessionDataQuery, connection))
+                        {
+                            insertCommand.Parameters.AddWithValue("@HostUserID", HostID);
+                            insertCommand.Parameters.AddWithValue("@SessionID", sessionID);
+                            insertCommand.Parameters.AddWithValue("@Port", Port);
+                            insertCommand.ExecuteNonQuery();
+                            Console.WriteLine("SESSION DATA ADDED SUCCESSFULLY!");
+                        }
+                    }
                 }
             }
         }

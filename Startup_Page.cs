@@ -10,6 +10,7 @@ namespace Aegis
     public partial class Startup_Page : Form
     {
         private string IPaddress = string.Empty;
+        private string pcName = string.Empty;
 
         public Startup_Page()
         {
@@ -21,11 +22,12 @@ namespace Aegis
             // Get the public IP address
             string publicIP = Mains.GetPublicIPAddress();
             this.IPaddress = publicIP;
+            this.pcName = pcName;
 
             System_IP.Text = "Public IP Address: " + publicIP;
 
             DB.Database_Check();
-            DB.Database_Test_Input_sessions(pcName, publicIP);
+            //DB.Database_Test_Input_sessions(pcName, publicIP);
 
             _ = WaitAndOpenHome();
         }
@@ -39,7 +41,7 @@ namespace Aegis
 
             this.Hide();
 
-            Home_Page homePage = new Home_Page(IPaddress, ports);
+            Home_Page homePage = new Home_Page(IPaddress, ports, pcName);
             Screen currentScreen = Screen.FromControl(this);
             homePage.StartPosition = FormStartPosition.Manual;
             homePage.Location = currentScreen.WorkingArea.Location;

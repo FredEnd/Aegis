@@ -37,9 +37,9 @@
             this.EncryptionSettingLabel = new System.Windows.Forms.Label();
             this.SessionID_Input = new System.Windows.Forms.TextBox();
             this.PortsCombo = new System.Windows.Forms.ComboBox();
-            this.SessionSettingsLabel = new System.Windows.Forms.Label();
             this.SessionLabelPanel = new System.Windows.Forms.Panel();
             this.Create_Session = new System.Windows.Forms.Button();
+            this.SessionSettingsLabel = new System.Windows.Forms.Label();
             this.SessionSettingsMainTable.SuspendLayout();
             this.MainPanel.SuspendLayout();
             this.SettingsTable.SuspendLayout();
@@ -151,18 +151,6 @@
             this.PortsCombo.Size = new System.Drawing.Size(588, 21);
             this.PortsCombo.TabIndex = 5;
             // 
-            // SessionSettingsLabel
-            // 
-            this.SessionSettingsLabel.AutoSize = true;
-            this.SessionSettingsLabel.BackColor = System.Drawing.SystemColors.ControlDark;
-            this.SessionSettingsLabel.Dock = System.Windows.Forms.DockStyle.Left;
-            this.SessionSettingsLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.SessionSettingsLabel.Location = new System.Drawing.Point(0, 0);
-            this.SessionSettingsLabel.Name = "SessionSettingsLabel";
-            this.SessionSettingsLabel.Size = new System.Drawing.Size(327, 37);
-            this.SessionSettingsLabel.TabIndex = 1;
-            this.SessionSettingsLabel.Text = "New Session Settings";
-            // 
             // SessionLabelPanel
             // 
             this.SessionLabelPanel.BackColor = System.Drawing.SystemColors.ControlDark;
@@ -184,6 +172,18 @@
             this.Create_Session.Text = "Apply And Create";
             this.Create_Session.UseVisualStyleBackColor = true;
             this.Create_Session.Click += new System.EventHandler(this.Create_Session_Click);
+            // 
+            // SessionSettingsLabel
+            // 
+            this.SessionSettingsLabel.AutoSize = true;
+            this.SessionSettingsLabel.BackColor = System.Drawing.SystemColors.ControlDark;
+            this.SessionSettingsLabel.Dock = System.Windows.Forms.DockStyle.Left;
+            this.SessionSettingsLabel.Font = new System.Drawing.Font("Microsoft Sans Serif", 24F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.SessionSettingsLabel.Location = new System.Drawing.Point(0, 0);
+            this.SessionSettingsLabel.Name = "SessionSettingsLabel";
+            this.SessionSettingsLabel.Size = new System.Drawing.Size(327, 37);
+            this.SessionSettingsLabel.TabIndex = 1;
+            this.SessionSettingsLabel.Text = "New Session Settings";
             // 
             // Session_Settings
             // 
