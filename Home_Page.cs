@@ -16,6 +16,7 @@ namespace Aegis
         private List<int> Ports;
         private string IPaddress;
         private string pcName;
+        //hello=
 
 
         public Home_Page(string IPaddress, List<int> Ports, string pcName)
