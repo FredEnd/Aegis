@@ -191,6 +191,7 @@ namespace Aegis
         private void Session_Settings_Click(object sender, EventArgs e)
         {
 
+            Session CurrentSession = new Session();
         }
     }
 }

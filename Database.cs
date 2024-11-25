@@ -193,6 +193,44 @@ namespace LocalDatabaseApp
             return chatSessions;
         }
 
+        public static List<(string SessionID, string HostUserID, string Encryption, int portNum)> LoadSessionSettings()
+        {
+            List<(string SessionID, string HostUserID, string Encryption, int portNum)> settingsList =
+                new List<(string, string, string, int)>();
+
+            try
+            {
+                using (SQLiteConnection connection = new SQLiteConnection($"Data Source={dbFilePath};Version=3;"))
+                {
+                    connection.Open();
+
+                    string query = "SELECT SessionID, HostUserID, Encryption, portNum FROM Settings";
+                    using (SQLiteCommand command = new SQLiteCommand(query, connection))
+                    {
+                        using (SQLiteDataReader reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                string sessionID = reader["SessionID"].ToString();
+                                string hostUserID = reader["HostUserID"].ToString();
+                                string encryption = reader["Encryption"].ToString();
+                                int portNum = Convert.ToInt32(reader["portNum"]);
+
+                                settingsList.Add((sessionID, hostUserID, encryption, portNum));
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Error retrieving settings: {e}");
+            }
+
+            return settingsList;
+        }
+
+
         public static async Task<List<(string MessageContent, string Direction, string SentAt, string UserID)>> GetMessagesBySessionAsync(string sessionId)
         {
             string connectionString = $"Data Source={dbFilePath};Version=3;";
