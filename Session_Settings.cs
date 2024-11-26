@@ -78,7 +78,7 @@ namespace Aegis
 
             var EncryptionMethod = EncryptionCombo.SelectedIndex;
 
-            Session newSession = new Session(SessionIDInput, pcName, 10, 1, SelectedPort);
+            Session newSession = new Session(SessionIDInput, pcName, Convert.ToString(EncryptionMethod), SelectedPort);
 
             newSession.Add_Session();
 

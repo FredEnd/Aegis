@@ -27,7 +27,7 @@ namespace Aegis_main
             }
             catch (Exception ex)
             {
-                Console.WriteLine( "Unable to get public IP: " + ex.Message );
+                Console.WriteLine("Unable to get public IP: " + ex.Message);
                 return "null";
             }
         }
@@ -157,93 +157,94 @@ namespace Aegis_main
             Console.WriteLine("Client disconnected.");
         }
 
-        /*
-        public static string EncryptData(string data, EncryptionType encryptionType)
+
+        public static List<string> EncryptDataInChunks(string data, EncryptionType encryptionType, int chunkSize = 1024)
         {
-            byte[] encryptedBytes;
+            List<string> encryptedChunks = new List<string>();
+            byte[] dataBytes = Encoding.UTF32.GetBytes(data);
 
-            // Convert the data to a byte array
-            byte[] dataBytes = Encoding.UTF8.GetBytes(data);
+            for (int i = 0; i < dataBytes.Length; i += chunkSize)
+            {
+                int currentChunkSize = Math.Min(chunkSize, dataBytes.Length - i);
+                byte[] chunk = new byte[currentChunkSize];
+                Array.Copy(dataBytes, i, chunk, 0, currentChunkSize);
 
+                byte[] encryptedBytes = EncryptChunk(chunk, encryptionType);
+                encryptedChunks.Add(Convert.ToBase64String(encryptedBytes));
+            }
+
+            return encryptedChunks;
+        }
+
+        private static byte[] EncryptChunk(byte[] chunk, EncryptionType encryptionType)
+        {
             switch (encryptionType)
             {
                 case EncryptionType.AES:
-                    using (Aes aesAlg = Aes.Create())
-                    {
-                        aesAlg.Key = aesAlg.GenerateKey(); // Generate a random key
-                        aesAlg.IV = aesAlg.GenerateIV();   // Generate a random IV
-                        encryptedBytes = EncryptWithAES(dataBytes, aesAlg.Key, aesAlg.IV);
-                    }
-                    break;
-
+                    return EncryptWithAES(chunk);
                 case EncryptionType.RSA:
-                    using (RSA rsa = RSA.Create())
-                    {
-                        rsa.KeySize = 2048; // Set RSA key size
-                        rsa.GenerateKeyPair(); // Generate keys
-                        encryptedBytes = EncryptWithRSA(dataBytes, rsa.ExportParameters(false)); // Only public key is needed for encryption
-                    }
-                    break;
-
+                    return EncryptWithRSA(chunk);
                 case EncryptionType.DES:
-                    using (DESCryptoServiceProvider des = new DESCryptoServiceProvider())
-                    {
-                        des.Key = des.GenerateKey(); // Generate a random key
-                        des.IV = des.GenerateIV();   // Generate a random IV
-                        encryptedBytes = EncryptWithDES(dataBytes, des.Key, des.IV);
-                    }
-                    break;
-
+                    return EncryptWithDES(chunk);
                 default:
                     throw new ArgumentException("Unsupported encryption type.");
             }
-
-            // Return the encrypted data as a base64 string
-            return Convert.ToBase64String(encryptedBytes);
         }
 
-        private static byte[] EncryptWithAES(byte[] dataBytes, byte[] key, byte[] iv)
+        private static byte[] EncryptWithAES(byte[] dataBytes)
         {
             using (Aes aesAlg = Aes.Create())
             {
-                aesAlg.Key = key;
-                aesAlg.IV = iv;
+                aesAlg.Key = GenerateRandomKey(aesAlg.KeySize / 8);
+                aesAlg.IV = GenerateRandomKey(aesAlg.BlockSize / 8);
+
                 using (ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV))
                 using (MemoryStream msEncrypt = new MemoryStream())
                 using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
-                using (StreamWriter swEncrypt = new StreamWriter(csEncrypt))
                 {
-                    swEncrypt.Write(Encoding.UTF8.GetString(dataBytes));
+                    csEncrypt.Write(dataBytes, 0, dataBytes.Length);
+                    csEncrypt.FlushFinalBlock();
                     return msEncrypt.ToArray();
                 }
             }
         }
 
-        private static byte[] EncryptWithRSA(byte[] dataBytes, RSAParameters publicKey)
+        private static byte[] EncryptWithRSA(byte[] dataBytes)
         {
             using (RSA rsa = RSA.Create())
             {
-                rsa.ImportParameters(publicKey);
+                rsa.KeySize = 2048;
                 return rsa.Encrypt(dataBytes, RSAEncryptionPadding.OaepSHA256);
             }
         }
 
-        private static byte[] EncryptWithDES(byte[] dataBytes, byte[] key, byte[] iv)
+        private static byte[] EncryptWithDES(byte[] dataBytes)
         {
             using (DESCryptoServiceProvider des = new DESCryptoServiceProvider())
             {
-                des.Key = key;
-                des.IV = iv;
+                des.Key = GenerateRandomKey(8);
+                des.IV = GenerateRandomKey(8); 
+
                 using (ICryptoTransform encryptor = des.CreateEncryptor(des.Key, des.IV))
                 using (MemoryStream msEncrypt = new MemoryStream())
                 using (CryptoStream csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
-                using (StreamWriter swEncrypt = new StreamWriter(csEncrypt))
                 {
-                    swEncrypt.Write(Encoding.UTF8.GetString(dataBytes));
+                    csEncrypt.Write(dataBytes, 0, dataBytes.Length);
+                    csEncrypt.FlushFinalBlock();
                     return msEncrypt.ToArray();
                 }
             }
         }
-        */
+
+        private static byte[] GenerateRandomKey(int size)
+        {
+            byte[] key = new byte[size];
+            using (RandomNumberGenerator rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(key);
+            }
+            return key;
+        }
     }
 }
+

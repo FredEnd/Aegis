@@ -33,6 +33,7 @@ namespace LocalDatabaseApp
                         CREATE TABLE IF NOT EXISTS Sessions (
                             SessionID TEXT PRIMARY KEY,
                             HostUserID INTEGER NOT NULL,
+                            EncryotionType TEXT NOT NULL,
                             CreatedAt TIMESTAMP DEFAULT (datetime(CURRENT_TIMESTAMP, 'localtime')),
                             Port INTEGER NOT NULL,
                             MaxConnections INTEGER DEFAULT 10,
@@ -192,6 +193,44 @@ namespace LocalDatabaseApp
             return chatSessions;
         }
 
+        public static List<(string SessionID, string HostUserID, string Encryption, int portNum)> LoadSessionSettings()
+        {
+            List<(string SessionID, string HostUserID, string Encryption, int portNum)> settingsList =
+                new List<(string, string, string, int)>();
+
+            try
+            {
+                using (SQLiteConnection connection = new SQLiteConnection($"Data Source={dbFilePath};Version=3;"))
+                {
+                    connection.Open();
+
+                    string query = "SELECT SessionID, HostUserID, Encryption, portNum FROM Settings";
+                    using (SQLiteCommand command = new SQLiteCommand(query, connection))
+                    {
+                        using (SQLiteDataReader reader = command.ExecuteReader())
+                        {
+                            while (reader.Read())
+                            {
+                                string sessionID = reader["SessionID"].ToString();
+                                string hostUserID = reader["HostUserID"].ToString();
+                                string encryption = reader["Encryption"].ToString();
+                                int portNum = Convert.ToInt32(reader["portNum"]);
+
+                                settingsList.Add((sessionID, hostUserID, encryption, portNum));
+                            }
+                        }
+                    }
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine($"Error retrieving settings: {e}");
+            }
+
+            return settingsList;
+        }
+
+
         public static async Task<List<(string MessageContent, string Direction, string SentAt, string UserID)>> GetMessagesBySessionAsync(string sessionId)
         {
             string connectionString = $"Data Source={dbFilePath};Version=3;";
@@ -320,7 +359,7 @@ namespace LocalDatabaseApp
             }
         }
 
-        public static void Create_Session(string sessionID, string HostID, int Port)
+        public static void Create_Session(string sessionID, string HostID, string Encryption, int Port)
         {
             using (SQLiteConnection connection = new SQLiteConnection($"Data Source={dbFilePath};Version=3;"))
             {
@@ -339,11 +378,12 @@ namespace LocalDatabaseApp
                     }
                     else
                     {
-                        string insertSessionDataQuery = "INSERT INTO Sessions (HostUserID, SessionID, Port) VALUES (@HostUserID, @SessionID, @Port)";
+                        string insertSessionDataQuery = "INSERT INTO Sessions (HostUserID, SessionID, Port) VALUES (@HostUserID, @SessionID, @Encryption, @Port)";
                         using (SQLiteCommand insertCommand = new SQLiteCommand(insertSessionDataQuery, connection))
                         {
                             insertCommand.Parameters.AddWithValue("@HostUserID", HostID);
                             insertCommand.Parameters.AddWithValue("@SessionID", sessionID);
+                            insertCommand.Parameters.AddWithValue("@Encryption", Encryption);
                             insertCommand.Parameters.AddWithValue("@Port", Port);
                             insertCommand.ExecuteNonQuery();
                             Console.WriteLine("SESSION DATA ADDED SUCCESSFULLY!");
