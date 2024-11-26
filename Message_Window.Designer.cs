@@ -35,7 +35,6 @@ namespace Aegis
             this.tableLayout_Messager = new System.Windows.Forms.TableLayoutPanel();
             this.Session_Panel = new System.Windows.Forms.Panel();
             this.Session_Label = new System.Windows.Forms.Label();
-            this.Session_Settings = new System.Windows.Forms.Button();
             this.Message_Panel = new System.Windows.Forms.Panel();
             this.MessageTable = new System.Windows.Forms.TableLayoutPanel();
             this.Input_Panel = new System.Windows.Forms.Panel();
@@ -76,7 +75,6 @@ namespace Aegis
             // Session_Panel
             // 
             this.Session_Panel.Controls.Add(this.Session_Label);
-            this.Session_Panel.Controls.Add(this.Session_Settings);
             this.Session_Panel.Dock = System.Windows.Forms.DockStyle.Fill;
             this.Session_Panel.Location = new System.Drawing.Point(3, 3);
             this.Session_Panel.Name = "Session_Panel";
@@ -93,18 +91,6 @@ namespace Aegis
             this.Session_Label.Name = "Session_Label";
             this.Session_Label.Size = new System.Drawing.Size(0, 42);
             this.Session_Label.TabIndex = 4;
-            // 
-            // Session_Settings
-            // 
-            this.Session_Settings.BackgroundImage = global::Aegis.Properties.Resources._8666615_settings_icon;
-            this.Session_Settings.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom;
-            this.Session_Settings.Dock = System.Windows.Forms.DockStyle.Right;
-            this.Session_Settings.Location = new System.Drawing.Point(950, 0);
-            this.Session_Settings.Name = "Session_Settings";
-            this.Session_Settings.Size = new System.Drawing.Size(43, 56);
-            this.Session_Settings.TabIndex = 3;
-            this.Session_Settings.UseVisualStyleBackColor = true;
-            this.Session_Settings.Click += new System.EventHandler(this.Session_Settings_Click);
             // 
             // Message_Panel
             // 
@@ -242,7 +228,6 @@ namespace Aegis
         private Button Emoji_Button;
         private Button File_Upload_Button;
         private Button Send_button;
-        private Button Session_Settings;
         private Panel Session_Panel;
         public Label Session_Label;
     }
