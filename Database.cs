@@ -6,6 +6,7 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static Aegis_main.Mains;
 
 namespace LocalDatabaseApp
 {
@@ -193,10 +194,10 @@ namespace LocalDatabaseApp
             return chatSessions;
         }
 
-        public static List<(string SessionID, string HostUserID, string Encryption, int portNum)> LoadSessionSettings()
+        public static List<(string HostUserID, string Encryption, int portNum)> LoadSessionSettings(string sessionID)
         {
-            List<(string SessionID, string HostUserID, string Encryption, int portNum)> settingsList =
-                new List<(string, string, string, int)>();
+            List<(string HostUserID, string Encryption, int portNum)> settingsList =
+                new List<(string, string, int)>();
 
             try
             {
@@ -204,19 +205,20 @@ namespace LocalDatabaseApp
                 {
                     connection.Open();
 
-                    string query = "SELECT SessionID, HostUserID, Encryption, portNum FROM Settings";
+                    string query = @"SELECT HostUserID, EncryotionType, Port FROM Sessions WHERE SessionID = @SessionID;";
                     using (SQLiteCommand command = new SQLiteCommand(query, connection))
                     {
+                        command.Parameters.AddWithValue("@SessionID", sessionID);
+
                         using (SQLiteDataReader reader = command.ExecuteReader())
                         {
                             while (reader.Read())
                             {
-                                string sessionID = reader["SessionID"].ToString();
                                 string hostUserID = reader["HostUserID"].ToString();
-                                string encryption = reader["Encryption"].ToString();
-                                int portNum = Convert.ToInt32(reader["portNum"]);
+                                string encryption = reader["EncryotionType"].ToString();
+                                int portNum = Convert.ToInt32(reader["Port"]); 
 
-                                settingsList.Add((sessionID, hostUserID, encryption, portNum));
+                                settingsList.Add((hostUserID, encryption, portNum));
                             }
                         }
                     }
@@ -224,11 +226,12 @@ namespace LocalDatabaseApp
             }
             catch (Exception e)
             {
-                Console.WriteLine($"Error retrieving settings: {e}");
+                Console.WriteLine($"Error retrieving settings: {e.Message}");
             }
 
             return settingsList;
         }
+
 
 
         public static async Task<List<(string MessageContent, string Direction, string SentAt, string UserID)>> GetMessagesBySessionAsync(string sessionId)
@@ -378,7 +381,7 @@ namespace LocalDatabaseApp
                     }
                     else
                     {
-                        string insertSessionDataQuery = "INSERT INTO Sessions (HostUserID, SessionID, Port) VALUES (@HostUserID, @SessionID, @Encryption, @Port)";
+                        string insertSessionDataQuery = "INSERT INTO Sessions (HostUserID, SessionID, EncryotionType, Port) VALUES (@HostUserID, @SessionID, @Encryption, @Port)";
                         using (SQLiteCommand insertCommand = new SQLiteCommand(insertSessionDataQuery, connection))
                         {
                             insertCommand.Parameters.AddWithValue("@HostUserID", HostID);

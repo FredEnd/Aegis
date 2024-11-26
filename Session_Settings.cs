@@ -5,9 +5,11 @@ using System.ComponentModel;
 using System.Data;
 using System.Drawing;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace Aegis
 {
@@ -30,6 +32,7 @@ namespace Aegis
             this.Home_Page = home_page;
             this.Settings = CurrentAppSettings;
 
+
             Ports.Sort();
 
             if (Ports.Count > 0)
@@ -41,6 +44,8 @@ namespace Aegis
                         PortsCombo.Items.Add(Port);
                     }
                 }
+
+                EncryptionCombo.Items.AddRange(Algorithms.ToArray());
             }
             else
             {
@@ -48,6 +53,13 @@ namespace Aegis
                 Application.Exit();
             }
         }
+
+        public static List<string> Algorithms { get; } = new List<string>
+        {
+            "AES",
+            "RSA",
+            "DES"
+        };
 
         public void Refresh_Sessions()
         {
@@ -76,9 +88,9 @@ namespace Aegis
 
             var SelectedPort = PortsCombo.SelectedIndex;
 
-            var EncryptionMethod = EncryptionCombo.SelectedIndex;
+            string encryptionMethod = EncryptionCombo.SelectedItem.ToString();
 
-            Session newSession = new Session(SessionIDInput, pcName, Convert.ToString(EncryptionMethod), SelectedPort);
+            Session newSession = new Session(SessionIDInput, pcName, encryptionMethod, SelectedPort);
 
             newSession.Add_Session();
 
