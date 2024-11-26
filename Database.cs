@@ -6,6 +6,7 @@ using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using static Aegis_main.Mains;
 
 namespace LocalDatabaseApp
 {
@@ -204,10 +205,9 @@ namespace LocalDatabaseApp
                 {
                     connection.Open();
 
-                    string query = "SELECT HostUserID, Encryption, portNum FROM Settings WHERE SessionID = @SessionID";
+                    string query = @"SELECT HostUserID, EncryotionType, Port FROM Sessions WHERE SessionID = @SessionID;";
                     using (SQLiteCommand command = new SQLiteCommand(query, connection))
                     {
-                        // Use parameters to prevent SQL injection
                         command.Parameters.AddWithValue("@SessionID", sessionID);
 
                         using (SQLiteDataReader reader = command.ExecuteReader())
@@ -215,8 +215,8 @@ namespace LocalDatabaseApp
                             while (reader.Read())
                             {
                                 string hostUserID = reader["HostUserID"].ToString();
-                                string encryption = reader["Encryption"].ToString();
-                                int portNum = Convert.ToInt32(reader["portNum"]);
+                                string encryption = reader["EncryotionType"].ToString();
+                                int portNum = Convert.ToInt32(reader["Port"]); 
 
                                 settingsList.Add((hostUserID, encryption, portNum));
                             }
@@ -231,6 +231,8 @@ namespace LocalDatabaseApp
 
             return settingsList;
         }
+
+
 
         public static async Task<List<(string MessageContent, string Direction, string SentAt, string UserID)>> GetMessagesBySessionAsync(string sessionId)
         {
@@ -379,7 +381,7 @@ namespace LocalDatabaseApp
                     }
                     else
                     {
-                        string insertSessionDataQuery = "INSERT INTO Sessions (HostUserID, SessionID, Port) VALUES (@HostUserID, @SessionID, @Encryption, @Port)";
+                        string insertSessionDataQuery = "INSERT INTO Sessions (HostUserID, SessionID, EncryotionType, Port) VALUES (@HostUserID, @SessionID, @Encryption, @Port)";
                         using (SQLiteCommand insertCommand = new SQLiteCommand(insertSessionDataQuery, connection))
                         {
                             insertCommand.Parameters.AddWithValue("@HostUserID", HostID);

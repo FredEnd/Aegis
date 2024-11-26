@@ -284,11 +284,17 @@ namespace Aegis
             if (CurrentAppSettings.Theme == "Dark")
             {
                 NewSessionSettings.BackColor = System.Drawing.SystemColors.ControlDarkDark;
+                NewSessionSettings.MainPanel.BackColor = System.Drawing.SystemColors.ControlDark;
+                NewSessionSettings.SessionLabelPanel.BackColor = System.Drawing.SystemColors.ControlDark;
+                NewSessionSettings.SessionSettingsLabel.BackColor = System.Drawing.SystemColors.ControlDark;
                 Console.WriteLine("MESSAGER THEME CHANGED TO DARK");
             }
             else
             {
                 NewSessionSettings.BackColor = System.Drawing.SystemColors.ControlDark;
+                NewSessionSettings.MainPanel.BackColor = System.Drawing.SystemColors.ControlLight;
+                NewSessionSettings.SessionLabelPanel.BackColor = System.Drawing.SystemColors.ControlLight;
+                NewSessionSettings.SessionSettingsLabel.BackColor = System.Drawing.SystemColors.ControlLight;
                 Console.WriteLine("MESSAGER THEME CHANGED TO LIGHT");
             }
 

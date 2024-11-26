@@ -9,6 +9,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
+using Aegis_main;
+
 
 namespace Aegis
 {
@@ -24,6 +26,18 @@ namespace Aegis
             this.sessionId = sessionId;
             this.UserID = UserID;
             _ = StartUpMessages();
+
+            List<(string HostUserID, string Encryption, int portNum)> sessionSettings = DB.LoadSessionSettings(sessionId);
+
+            if (sessionSettings.Count > 0)
+            {
+                var setting = sessionSettings[0];
+                _ = Mains.StartServerAsync(setting.portNum);
+            }
+            else
+            {
+                Console.WriteLine("No session settings found.");
+            }
         }
 
         private async Task StartUpMessages()

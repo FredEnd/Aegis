@@ -207,8 +207,8 @@
         #endregion
 
         private System.Windows.Forms.TableLayoutPanel SessionSettingsMainTable;
-        private System.Windows.Forms.Panel MainPanel;
-        private System.Windows.Forms.Label SessionSettingsLabel;
+        public System.Windows.Forms.Panel MainPanel;
+        public System.Windows.Forms.Label SessionSettingsLabel;
         private System.Windows.Forms.TableLayoutPanel SettingsTable;
         private System.Windows.Forms.Label SessionIDLabel;
         private System.Windows.Forms.Label Port_Label;
@@ -216,7 +216,7 @@
         private System.Windows.Forms.TextBox SessionID_Input;
         private System.Windows.Forms.ComboBox EncryptionCombo;
         private System.Windows.Forms.ComboBox PortsCombo;
-        private System.Windows.Forms.Panel SessionLabelPanel;
+        public System.Windows.Forms.Panel SessionLabelPanel;
         private System.Windows.Forms.Button Create_Session;
     }
 }

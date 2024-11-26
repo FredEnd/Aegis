@@ -127,7 +127,7 @@ namespace Aegis_main
             }
         }
 
-        private static async Task HandleClientAsync(TcpClient client)
+        public static async Task HandleClientAsync(TcpClient client)
         {
             using (NetworkStream stream = client.GetStream())
             {
