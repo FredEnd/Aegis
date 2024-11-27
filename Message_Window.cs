@@ -21,7 +21,7 @@ namespace Aegis
         private readonly string sessionId;
         public string UserID;
 
-        public Message_Window(string sessionId, string UserID, string IPaddress)
+        public Message_Window(string sessionId, string UserID, string IPaddress, List<int> Ports)
         {
             InitializeComponent();
             this.sessionId = sessionId;

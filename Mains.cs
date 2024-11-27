@@ -11,6 +11,7 @@ using System.Text;
 using System.Net.Sockets;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
 
 namespace Aegis_main
 {
@@ -106,6 +107,9 @@ namespace Aegis_main
             return openPorts;
         }
 
+
+        //-------------------------------------------------------------------------------------------------
+
         public static string GenerateSessionCode(string ipAddress, int port, string sessionID)
         {
             Console.WriteLine($"{ipAddress},{port}, {sessionID}");
@@ -150,8 +154,7 @@ namespace Aegis_main
         }
 
 
-
-
+        //-------------------------------------------------------------------------------------------------
 
         public static async Task StartServerAsync(int port)
         {
@@ -205,6 +208,51 @@ namespace Aegis_main
             Console.WriteLine("Client disconnected.");
         }
 
+        
+
+        public async Task ConnectAsync(string ipAddress, int Port)
+        {
+            TcpClient _client;
+            NetworkStream _stream;
+            string ClientMessage = "";
+
+            try
+            {
+                _client = new TcpClient();
+
+                await _client.ConnectAsync(ipAddress, Port);
+                Console.WriteLine($"Connected to {ipAddress}:{Port}");
+
+                _stream = _client.GetStream();
+
+                Task listenTask = Task.Run(() => ListenForMessagesAsync());
+
+                await SendMessageAsync(ClientMessage, _stream);
+
+                await listenTask;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error connecting to peer: {ex.Message}");
+            }
+        }
+
+        public async Task SendMessageAsync(string message, NetworkStream _stream)
+        {
+            try
+            {
+                byte[] data = Encoding.UTF8.GetBytes(message);
+                await _stream.WriteAsync(data, 0, data.Length);
+                Console.WriteLine($"Sent: {message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error sending message: {ex.Message}");
+            }
+        }
+
+
+        //-------------------------------------------------------------------------------------------------
 
         public static List<string> EncryptDataInChunks(string data, EncryptionType encryptionType, int chunkSize = 1024)
         {

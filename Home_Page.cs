@@ -51,7 +51,7 @@ namespace Aegis
                 {
                     foreach (var session in chatSessions)
                     {
-                        ChatSessionButton newChat = new ChatSessionButton(session.SessionID, session.CreatedAt, CurrentAppSettings, pcName, IPaddress);
+                        ChatSessionButton newChat = new ChatSessionButton(session.SessionID, session.CreatedAt, CurrentAppSettings, pcName, IPaddress, Ports);
                         newChat.InitializeButton();
                         Messages_Panel.Controls.Add(newChat.GetButton());
                     }
@@ -327,14 +327,16 @@ namespace Aegis
         private Button sessionButton;
         private string UserID;
         private string IPaddress;
+        private List<int> Ports;
 
-        public ChatSessionButton(string sessionID, string createdAt,Settings settings, string UserID, string IPaddress)
+        public ChatSessionButton(string sessionID, string createdAt,Settings settings, string UserID, string IPaddress, List<int> Ports)
         {
             // initalise the button styling 
             this.sessionID = sessionID;
             this.createdAt = createdAt;
             this.appSettings = settings;
             this.UserID = UserID;
+            this.Ports = Ports;
             this.IPaddress = IPaddress;
             InitializeButton();
         }
@@ -353,7 +355,7 @@ namespace Aegis
         public void OpenSessionForm()
         {
             Screen currentScreen = Screen.FromControl(sessionButton);
-            Message_Window sessionForm = new Message_Window(sessionID, UserID, IPaddress);
+            Message_Window sessionForm = new Message_Window(sessionID, UserID, IPaddress, Ports);
 
             // Check the theme in the settings and apply the appropriate colors
             if (appSettings.Theme == "Dark")
