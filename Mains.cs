@@ -208,58 +208,46 @@ namespace Aegis_main
             Console.WriteLine("Client disconnected.");
         }
 
-        
 
-        public async Task ConnectAsync(string ipAddress, int Port)
+
+        public static async Task<(TcpClient client, NetworkStream stream)> ConnectAsync(string ipAddress, int port)
         {
-            TcpClient _client;
-            NetworkStream _stream;
-            string ClientMessage = "";
+            TcpClient client = null;
+            NetworkStream stream = null;
 
             try
             {
-                _client = new TcpClient();
+                client = new TcpClient();
+                await client.ConnectAsync(ipAddress, port);
+                Console.WriteLine($"Connected to {ipAddress}:{port}");
 
-                await _client.ConnectAsync(ipAddress, Port);
-                Console.WriteLine($"Connected to {ipAddress}:{Port}");
+                stream = client.GetStream();
 
-                _stream = _client.GetStream();
-
-                Task listenTask = Task.Run(() => ListenForMessagesAsync(_stream));
-
-                await SendMessageAsync(ClientMessage, _stream);
-
-                await listenTask;
+                _ = Task.Run(() => ListenForMessagesAsync(stream));
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error connecting to peer: {ex.Message}");
             }
+            return (client, stream);
         }
 
-        public async Task SendMessageAsync(string message, NetworkStream _stream)
+        private static async Task ListenForMessagesAsync(NetworkStream stream)
         {
+            byte[] buffer = new byte[1024];
+
             try
             {
-                byte[] data = Encoding.UTF8.GetBytes(message);
-                await _stream.WriteAsync(data, 0, data.Length);
-                Console.WriteLine($"Sent: {message}");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"Error sending message: {ex.Message}");
-            }
-        }
-
-        private async Task ListenForMessagesAsync(NetworkStream _stream)
-        {
-            try
-            {
-                byte[] buffer = new byte[1024];
-                int bytesRead;
-
-                while ((bytesRead = await _stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                while (true)
                 {
+                    int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
+
+                    if (bytesRead == 0)
+                    {
+                        MessageBox.Show("Connection closed by remote peer.");
+                        break;
+                    }
+
                     string receivedMessage = Encoding.UTF8.GetString(buffer, 0, bytesRead);
                     Console.WriteLine($"Received: {receivedMessage}");
                 }
