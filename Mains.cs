@@ -10,6 +10,8 @@ using NAudio.Wave;
 using System.Text;
 using System.Net.Sockets;
 using System.Collections.Generic;
+using System.Linq;
+using System.Runtime.InteropServices.ComTypes;
 
 namespace Aegis_main
 {
@@ -105,6 +107,55 @@ namespace Aegis_main
             return openPorts;
         }
 
+
+        //-------------------------------------------------------------------------------------------------
+
+        public static string GenerateSessionCode(string ipAddress, int port, string sessionID)
+        {
+            Console.WriteLine($"{ipAddress},{port}, {sessionID}");
+
+            if (string.IsNullOrWhiteSpace(ipAddress) || string.IsNullOrWhiteSpace(sessionID))
+            {
+                throw new ArgumentException("IP address and SessionID must not be empty.");
+            }
+
+            if (port < 0 || port > 65535)
+            {
+                throw new ArgumentOutOfRangeException(nameof(port), "Port must be in the range 0-65535.");
+            }
+
+            return $"{ipAddress}/{port}/{sessionID}";
+        }
+
+        public static (string ipAddress, int port, string sessionID) InfoFromSessionCode(string sessionCode)
+        {
+            if (string.IsNullOrWhiteSpace(sessionCode))
+            {
+                throw new ArgumentException("Session code must not be empty or null.");
+            }
+
+            string[] parts = sessionCode.Split('/');
+
+            if (parts.Length < 3)
+            {
+                throw new FormatException("Invalid session code format. Expected format: IPaddress.Port.SessionID");
+            }
+
+            string ipAddress = string.Join(".", parts.Take(parts.Length - 2));
+
+            if (!int.TryParse(parts[parts.Length - 2], out int port) || port < 0 || port > 65535)
+            {
+                throw new FormatException("Invalid port value in session code.");
+            }
+
+            string sessionID = parts[parts.Length - 1];
+
+            return (ipAddress, port, sessionID);
+        }
+
+
+        //-------------------------------------------------------------------------------------------------
+
         public static async Task StartServerAsync(int port)
         {
             TcpListener listener = new TcpListener(IPAddress.Any, port);
@@ -157,6 +208,51 @@ namespace Aegis_main
             Console.WriteLine("Client disconnected.");
         }
 
+        
+
+        public async Task ConnectAsync(string ipAddress, int Port)
+        {
+            TcpClient _client;
+            NetworkStream _stream;
+            string ClientMessage = "";
+
+            try
+            {
+                _client = new TcpClient();
+
+                await _client.ConnectAsync(ipAddress, Port);
+                Console.WriteLine($"Connected to {ipAddress}:{Port}");
+
+                _stream = _client.GetStream();
+
+                Task listenTask = Task.Run(() => ListenForMessagesAsync());
+
+                await SendMessageAsync(ClientMessage, _stream);
+
+                await listenTask;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error connecting to peer: {ex.Message}");
+            }
+        }
+
+        public async Task SendMessageAsync(string message, NetworkStream _stream)
+        {
+            try
+            {
+                byte[] data = Encoding.UTF8.GetBytes(message);
+                await _stream.WriteAsync(data, 0, data.Length);
+                Console.WriteLine($"Sent: {message}");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error sending message: {ex.Message}");
+            }
+        }
+
+
+        //-------------------------------------------------------------------------------------------------
 
         public static List<string> EncryptDataInChunks(string data, EncryptionType encryptionType, int chunkSize = 1024)
         {

@@ -26,5 +26,10 @@ namespace YourNamespace
             this.DialogResult = DialogResult.No; 
             this.Close(); 
         }
+
+        private void Confirmation_Label_Click(object sender, EventArgs e)
+        {
+
+        }
     }
 }

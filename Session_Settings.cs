@@ -74,7 +74,7 @@ namespace Aegis
             {
                 foreach (var session in chatSessions)
                 {
-                    ChatSessionButton newChat = new ChatSessionButton(session.SessionID, session.CreatedAt, Settings, pcName);
+                    ChatSessionButton newChat = new ChatSessionButton(session.SessionID, session.CreatedAt, Settings, pcName, IPaddress, Ports);
                     newChat.InitializeButton();
                     Home_Page.Messages_Panel.Controls.Add(newChat.GetButton());
                 }
