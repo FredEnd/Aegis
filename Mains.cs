@@ -153,7 +153,7 @@ namespace Aegis_main
             return (ipAddress, port, sessionID);
         }
 
-
+        
         //-------------------------------------------------------------------------------------------------
 
         public static async Task StartServerAsync(int port)
@@ -225,7 +225,7 @@ namespace Aegis_main
 
                 _stream = _client.GetStream();
 
-                Task listenTask = Task.Run(() => ListenForMessagesAsync());
+                Task listenTask = Task.Run(() => ListenForMessagesAsync(_stream));
 
                 await SendMessageAsync(ClientMessage, _stream);
 
@@ -248,6 +248,25 @@ namespace Aegis_main
             catch (Exception ex)
             {
                 Console.WriteLine($"Error sending message: {ex.Message}");
+            }
+        }
+
+        private async Task ListenForMessagesAsync(NetworkStream _stream)
+        {
+            try
+            {
+                byte[] buffer = new byte[1024];
+                int bytesRead;
+
+                while ((bytesRead = await _stream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                {
+                    string receivedMessage = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                    Console.WriteLine($"Received: {receivedMessage}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error while listening for messages: {ex.Message}");
             }
         }
 

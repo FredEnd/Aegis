@@ -131,6 +131,12 @@
     <Compile Include="ConfirmationDialog.Designer.cs">
       <DependentUpon>ConfirmationDialog.cs</DependentUpon>
     </Compile>
+    <Compile Include="DataInput.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="DataInput.Designer.cs">
+      <DependentUpon>DataInput.cs</DependentUpon>
+    </Compile>
     <Compile Include="Home_Page.cs">
       <SubType>Form</SubType>
     </Compile>
@@ -166,6 +172,9 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <EmbeddedResource Include="ConfirmationDialog.resx">
       <DependentUpon>ConfirmationDialog.cs</DependentUpon>
+    </EmbeddedResource>
+    <EmbeddedResource Include="DataInput.resx">
+      <DependentUpon>DataInput.cs</DependentUpon>
     </EmbeddedResource>
     <EmbeddedResource Include="Home_Page.resx">
       <DependentUpon>Home_Page.cs</DependentUpon>
