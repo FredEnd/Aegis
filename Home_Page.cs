@@ -113,7 +113,7 @@ namespace Aegis
             };
             deleteDbButton.Click += (s, e) =>
             {
-                bool wasDeleted = deleteDB();
+                bool wasDeleted = deleteDBConfirmation();
                 if (wasDeleted)
                 {
                     DB.DeleteDb();
@@ -223,7 +223,7 @@ namespace Aegis
             return appSettings;
         }
 
-        private bool deleteDB()
+        private bool deleteDBConfirmation()
         {
             using (var confirmationDialog = new ConfirmationDialog())
             {

@@ -10,6 +10,7 @@ using System.Text;
 using System.Threading.Tasks;
 using System.Windows.Forms;
 using Aegis_main;
+using YourNamespace;
 
 
 namespace Aegis
@@ -33,6 +34,11 @@ namespace Aegis
             {
                 var setting = sessionSettings[0];
 
+                if (!Ports.Contains(setting.portNum))
+                {
+                    MessageBox.Show("Please note that the port of this session is not in the port list that we have scanned from your network, therefore this chat wont be functional however you can still read from it...");
+                }
+
                 string ChatCode = Mains.GenerateSessionCode(IPaddress, setting.portNum, sessionId);
 
                 TextBox Code = new TextBox();
@@ -47,6 +53,21 @@ namespace Aegis
             else
             {
                 Console.WriteLine("No session settings found.");
+            }
+
+            this.FormClosing += Message_Window_FormClosing;
+        }
+
+        private void Message_Window_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            using (var confirmationDialog = new ConfirmationDialog())
+            {
+                var result = confirmationDialog.ShowDialog();
+                // Cancel form close if user does not confirm
+                if (!confirmationDialog.UserConfirmed)
+                {
+                    e.Cancel = true; // Prevent form from closing if user did not confirm
+                }
             }
         }
 

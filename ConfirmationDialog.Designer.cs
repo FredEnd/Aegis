@@ -62,9 +62,9 @@
             this.Confirmation_Label.Name = "Confirmation_Label";
             this.Confirmation_Label.Size = new System.Drawing.Size(506, 215);
             this.Confirmation_Label.TabIndex = 2;
-            this.Confirmation_Label.Text = "Are you sure that you want to delete all of your data? If so, the application wil" +
-    "l close.";
+            this.Confirmation_Label.Text = "Are You Sure?";
             this.Confirmation_Label.TextAlign = System.Drawing.ContentAlignment.MiddleCenter;
+            this.Confirmation_Label.Click += new System.EventHandler(this.Confirmation_Label_Click);
             // 
             // button1
             // 
