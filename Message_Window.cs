@@ -20,7 +20,7 @@ namespace Aegis
         private readonly string sessionId;
         public string UserID;
 
-        public Message_Window(string sessionId, string UserID)
+        public Message_Window(string sessionId, string UserID, string IPaddress)
         {
             InitializeComponent();
             this.sessionId = sessionId;
@@ -32,7 +32,17 @@ namespace Aegis
             if (sessionSettings.Count > 0)
             {
                 var setting = sessionSettings[0];
+
+                string ChatCode = Mains.GenerateSessionCode(IPaddress, setting.portNum, sessionId);
+
+                TextBox Code = new TextBox();
+                Session_Panel.Controls.Add(Code);
+                Code.Dock = DockStyle.Right;
+                Code.ReadOnly = true;
+                Code.Text = ChatCode;
+
                 _ = Mains.StartServerAsync(setting.portNum);
+                Console.WriteLine("TCP SERVER LISTENING");
             }
             else
             {
