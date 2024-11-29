@@ -43,14 +43,12 @@ namespace Aegis_main
         public static async void play_notifercation()
         {
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            Console.WriteLine("base Dir -- ", baseDir);
 
-            // Navigate back one directory to the Aegis folder
-            string resourcesPath = Path.Combine(baseDir, "..\\..\\Resources");
+            string notificationPath = Path.Combine(baseDir, "Resources", "Notification.mp3");
+            Console.WriteLine("Not Path --", notificationPath);
 
-            // Combine and new working db path
-            string notificationPath = Path.Combine(resourcesPath, "Notification.mp3");
-
-            // Run the audio playback in a separate task
+  
             await Task.Run(() =>
             {
                 using (var audio = new AudioFileReader(notificationPath))
@@ -59,10 +57,9 @@ namespace Aegis_main
                     outputDevice.Init(audio);
                     outputDevice.Play();
 
-                    // Wait until playback is finished
                     while (outputDevice.PlaybackState == PlaybackState.Playing)
                     {
-                        Thread.Sleep(100); // Keep checking playback state
+                        Thread.Sleep(100);
                     }
                 }
             });

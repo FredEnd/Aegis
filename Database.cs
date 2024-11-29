@@ -12,11 +12,13 @@ namespace LocalDatabaseApp
 {
     class DB
     {
-        private static readonly string dbFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..\\..\\Resources", "localdatabase.db");
+        private static readonly string dbFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Resources", "localdatabase.db");
 
         public static void Database_Check()
         {
-            if (!File.Exists(dbFilePath))
+            string dbDirectory = Path.GetDirectoryName(dbFilePath);
+
+            if (!Directory.Exists(dbDirectory))
             {
                 SQLiteConnection.CreateFile(dbFilePath);
                 Console.WriteLine("DATABASE CREATED SUCCESSFULLY");
