@@ -97,6 +97,7 @@ namespace LocalDatabaseApp
             }
         }
 
+        //-------------------------------------------------------------------------------------------------
 
         public static string RecallDB()
         {
@@ -173,6 +174,7 @@ namespace LocalDatabaseApp
             }
         }
 
+        //-------------------------------------------------------------------------------------------------
         public static List<(string SessionID, string CreatedAt)> LoadChatSessions()
         {
             List<(string SessionID, string CreatedAt)> chatSessions = new List<(string, string)>();
@@ -245,7 +247,7 @@ namespace LocalDatabaseApp
             return settingsList;
         }
 
-
+        //-------------------------------------------------------------------------------------------------
 
         public static async Task<List<(string MessageContent, string Direction, string SentAt, string UserID)>> GetMessagesBySessionAsync(string sessionId)
         {
@@ -405,6 +407,26 @@ namespace LocalDatabaseApp
                             Console.WriteLine("SESSION DATA ADDED SUCCESSFULLY!");
                         }
                     }
+                }
+            }
+        }
+
+        public static void Create_Message(string sessionID, string userID, string messageContent, string direction)
+        {
+            using (SQLiteConnection connection = new SQLiteConnection($"Data Source={dbFilePath};Version=3;"))
+            {
+                connection.Open();
+                string insertMessageDataQuery = @"
+                            INSERT INTO Messages (SessionID, UserID, Message_Content, Direction) 
+                            VALUES (@SessionID, @UserID, @MessageContent, @Direction)";
+
+                using (SQLiteCommand command = new SQLiteCommand(insertMessageDataQuery, connection))
+                {
+                    command.Parameters.AddWithValue("@SessionID", sessionID);
+                    command.Parameters.AddWithValue("@UserID", userID);  
+                    command.Parameters.AddWithValue("@MessageContent", messageContent);
+                    command.Parameters.AddWithValue("@Direction", direction);
+                    command.ExecuteNonQuery();
                 }
             }
         }

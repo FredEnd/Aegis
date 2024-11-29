@@ -11,6 +11,8 @@ using System.Threading.Tasks;
 using System.Windows.Forms;
 using Aegis_main;
 using YourNamespace;
+using System.Net.Sockets;
+using System.Net;
 
 
 namespace Aegis
@@ -19,27 +21,41 @@ namespace Aegis
     {
         private FlowLayoutPanel flowLayoutPanel;
         private readonly string sessionId;
-        public string UserID;
+        public string HUserID;
+        public string EncryptionType;
 
         public Message_Window(string sessionId, string UserID, string IPaddress, List<int> Ports)
         {
-            InitializeComponent();
-            this.sessionId = sessionId;
-            this.UserID = UserID;
-            _ = StartUpMessages();
+            List<(string HostUserID, string Encryption, int portNum)> sessionSettings = DB.LoadSessionSettings(sessionId);
 
+            var setting = sessionSettings[0];
+
+            if(UserID != setting.HostUserID)
+            {
+
+            }
+
+            else
+            {
+                InitializeComponent();
+                this.sessionId = sessionId;
+                this.HUserID = UserID;
+
+                this.FormClosing += Message_Window_FormClosing;
+
+                _ = InitializeMessageWindowHostAsync(IPaddress, Ports);
+            }
+        }
+
+        private async Task InitializeMessageWindowHostAsync(string IPaddress, List<int> Ports)
+        {
             List<(string HostUserID, string Encryption, int portNum)> sessionSettings = DB.LoadSessionSettings(sessionId);
 
             if (sessionSettings.Count > 0)
             {
                 var setting = sessionSettings[0];
 
-                Console.WriteLine(setting.portNum);
-
-                if (!Ports.Contains(setting.portNum))
-                {
-                    MessageBox.Show("Please note that the port of this session is not in the port list that we have scanned from your network, therefore this chat wont be functional however you can still read from it...");
-                }
+                this.EncryptionType = setting.Encryption;
 
                 string ChatCode = Mains.GenerateSessionCode(IPaddress, setting.portNum, sessionId);
 
@@ -49,16 +65,139 @@ namespace Aegis
                 Code.ReadOnly = true;
                 Code.Text = ChatCode;
 
-                _ = Mains.StartServerAsync(setting.portNum);
-                Console.WriteLine("TCP SERVER LISTENING");
+                TcpListener listener = new TcpListener(IPAddress.Any, setting.portNum);
+                listener.Start();
+                Console.WriteLine($"Server listening on port {setting.portNum}...");
+
+                try
+                {
+                    while (true)
+                    {
+                        TcpClient NewClient = await Mains.AcceptClientAsync(listener);
+                        if (NewClient != null)
+                        {
+                            string Message = await Mains.HandleClientAsync(NewClient);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Error in server loop: {ex.Message}");
+                }
+                finally
+                {
+                    listener.Stop();
+                    Console.WriteLine("Server stopped.");
+                }
             }
             else
             {
                 Console.WriteLine("No session settings found.");
             }
-
-            this.FormClosing += Message_Window_FormClosing;
         }
+
+        private void HandleIncomingMessage(string message)
+        {
+            if (string.IsNullOrEmpty(message))
+            {
+                Console.WriteLine("Received an empty message.");
+                return;
+            }
+
+            try
+            {
+                // Split the message by '|'
+                string[] commands = message.Split('|');
+
+                foreach (string command in commands)
+                {
+                    // Trim whitespace and process each command
+                    ProcessCommandOrMessage(command.Trim());
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error processing message: {ex.Message}");
+            }
+        }
+
+        //-------------------------------------------------------------------------------------------------
+
+        private async void ProcessCommandOrMessage(string command)
+        {
+            const string getSessionInfoPrefix = "GET_SESSION_INFO:";
+            const string userIdPrefix = "USERID:";
+
+            string recipentuserID = null;
+
+            if (command.StartsWith(getSessionInfoPrefix))
+            {
+                string sessionID = command.Substring(getSessionInfoPrefix.Length).Trim();
+
+                if (!string.IsNullOrEmpty(sessionID))
+                {
+                    Console.WriteLine($"Command received to get session info for: {sessionID}");
+
+                    byte[] response = Encoding.UTF8.GetBytes($"SESSION_INFO_RECEIVED:{HUserID},{EncryptionType}");
+                }
+
+                else if (command.StartsWith(userIdPrefix))
+                {
+
+                    if (!string.IsNullOrEmpty(recipentuserID))
+                    {
+                        Console.WriteLine("Recipient userID Recieved");
+                        recipentuserID = command.Substring(userIdPrefix.Length).Trim();
+
+                    }
+                    else
+                    {
+                        Console.WriteLine("USERID command received but no user ID was provided.");
+                    }
+                }
+                else
+                {
+                    Console.WriteLine($"Standard message received: {command}");
+
+                    DB.Create_Message(sessionId, recipentuserID, command, "recieved");
+
+                    var chatData = await DB.GetMessagesBySessionAsync(sessionId);
+
+                    if (chatData == null || chatData.Count == 0)
+                    {
+                        Console.WriteLine("NO MESSAGES");
+                    }
+                    else
+                    {
+                        MessageTable.Controls.Clear();
+
+                        foreach (var message in chatData)
+                        {
+                            var messageInstance = new Message(message.UserID, message.Direction, message.MessageContent, message.SentAt);
+                            var messagePanel = messageInstance.CreateMessagePanel();
+
+                            messagePanel.AutoSize = true;
+                            messagePanel.AutoSizeMode = AutoSizeMode.GrowOnly;
+                            messagePanel.Dock = DockStyle.Top;
+
+                            int columnIndex = message.Direction == "sent" ? 1 : 0;
+
+                            MessageTable.Controls.Add(messagePanel, columnIndex, MessageTable.RowCount);
+
+                            MessageTable.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                            MessageTable.RowCount++;
+
+                            for (int i = 0; i < MessageTable.RowCount; i++)
+                            {
+                                MessageTable.RowStyles[i] = new RowStyle(SizeType.AutoSize);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        //-------------------------------------------------------------------------------------------------
 
         private void Message_Window_FormClosing(object sender, FormClosingEventArgs e)
         {
@@ -180,6 +319,7 @@ namespace Aegis
 
         }
 
+        //-------------------------------------------------------------------------------------------------
 
         private void Emoji_Button_Click(object sender, EventArgs e)
         {
@@ -196,7 +336,7 @@ namespace Aegis
             var MessageInput = Input_Box.Text;
             Console.WriteLine(MessageInput);
 
-            await DB.NewMessageFromClientAsync(MessageInput, sessionId, UserID);
+            await DB.NewMessageFromClientAsync(MessageInput, sessionId, HUserID);
             Console.WriteLine("SUCCESSFULLY WRITTEN MESSAGE");
 
             Input_Box.Text = null;

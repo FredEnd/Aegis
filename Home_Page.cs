@@ -308,7 +308,7 @@ namespace Aegis
         private void Session_Joiner_Click(object sender, EventArgs e)
         {
             Screen currentScreen = Screen.FromControl(Session_Joiner);
-            DataInput dataInput = new DataInput();
+            DataInput dataInput = new DataInput(pcName, this, Ports, CurrentAppSettings, IPaddress);
 
             dataInput.StartPosition = FormStartPosition.Manual;
             dataInput.Location = currentScreen.WorkingArea.Location;

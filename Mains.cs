@@ -150,32 +150,26 @@ namespace Aegis_main
             return (ipAddress, port, sessionID);
         }
 
-        
+
         //-------------------------------------------------------------------------------------------------
 
-        public static async Task StartServerAsync(int port)
+        public static async Task<TcpClient> AcceptClientAsync(TcpListener listener)
         {
-            TcpListener listener = new TcpListener(IPAddress.Any, port);
-            listener.Start();
-            Console.WriteLine($"Server listening on port {port}...");
-
-            while (true)
+            try
             {
-                try
-                {
-                    TcpClient client = await listener.AcceptTcpClientAsync();
-                    Console.WriteLine("Client connected!");
-
-                    _ = HandleClientAsync(client);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Server error: {ex.Message}");
-                }
+                TcpClient client = await listener.AcceptTcpClientAsync();
+                Console.WriteLine("Client connected!");
+                return client;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Server error: {ex.Message}");
+                return null;
             }
         }
 
-        public static async Task HandleClientAsync(TcpClient client)
+
+        public static async Task<string> HandleClientAsync(TcpClient client)
         {
             using (NetworkStream stream = client.GetStream())
             {
@@ -189,10 +183,13 @@ namespace Aegis_main
                         if (bytesRead == 0) break;
 
                         string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                        Console.WriteLine($"Received: {message}");
 
+                        return message;
+
+                        /*
                         byte[] response = Encoding.UTF8.GetBytes($"Echo: {message}");
                         await stream.WriteAsync(response, 0, response.Length);
+                        */
                     }
                     catch (Exception ex)
                     {
@@ -203,6 +200,7 @@ namespace Aegis_main
             }
 
             Console.WriteLine("Client disconnected.");
+            return null;
         }
 
 
@@ -231,7 +229,7 @@ namespace Aegis_main
 
         private static async Task ListenForMessagesAsync(NetworkStream stream)
         {
-            byte[] buffer = new byte[1024];
+            byte[] buffer = new byte[4096];
 
             try
             {
