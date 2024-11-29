@@ -34,6 +34,8 @@ namespace Aegis
             {
                 var setting = sessionSettings[0];
 
+                Console.WriteLine(setting.portNum);
+
                 if (!Ports.Contains(setting.portNum))
                 {
                     MessageBox.Show("Please note that the port of this session is not in the port list that we have scanned from your network, therefore this chat wont be functional however you can still read from it...");

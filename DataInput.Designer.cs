@@ -30,9 +30,9 @@
         {
             this.DataInputTable1 = new System.Windows.Forms.TableLayoutPanel();
             this.label1 = new System.Windows.Forms.Label();
-            this.Enter = new System.Windows.Forms.Button();
             this.tableLayoutPanel1 = new System.Windows.Forms.TableLayoutPanel();
             this.Cancel = new System.Windows.Forms.Button();
+            this.EnterButton = new System.Windows.Forms.Button();
             this.EnterBox = new System.Windows.Forms.TextBox();
             this.DataInputTable1.SuspendLayout();
             this.tableLayoutPanel1.SuspendLayout();
@@ -67,24 +67,13 @@
             this.label1.TabIndex = 0;
             this.label1.Text = "Please enter your code for other session";
             // 
-            // Enter
-            // 
-            this.Enter.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.Enter.Location = new System.Drawing.Point(3, 3);
-            this.Enter.Name = "Enter";
-            this.Enter.Size = new System.Drawing.Size(391, 94);
-            this.Enter.TabIndex = 1;
-            this.Enter.Text = "Enter";
-            this.Enter.UseVisualStyleBackColor = true;
-            this.Enter.Click += new System.EventHandler(this.Enter_Click);
-            // 
             // tableLayoutPanel1
             // 
             this.tableLayoutPanel1.ColumnCount = 2;
             this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tableLayoutPanel1.ColumnStyles.Add(new System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 50F));
             this.tableLayoutPanel1.Controls.Add(this.Cancel, 1, 0);
-            this.tableLayoutPanel1.Controls.Add(this.Enter, 0, 0);
+            this.tableLayoutPanel1.Controls.Add(this.EnterButton, 0, 0);
             this.tableLayoutPanel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tableLayoutPanel1.Location = new System.Drawing.Point(3, 347);
             this.tableLayoutPanel1.Name = "tableLayoutPanel1";
@@ -104,6 +93,17 @@
             this.Cancel.Text = "Cancel";
             this.Cancel.UseVisualStyleBackColor = true;
             this.Cancel.Click += new System.EventHandler(this.Cancel_Click);
+            // 
+            // EnterButton
+            // 
+            this.EnterButton.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.EnterButton.Location = new System.Drawing.Point(3, 3);
+            this.EnterButton.Name = "EnterButton";
+            this.EnterButton.Size = new System.Drawing.Size(391, 94);
+            this.EnterButton.TabIndex = 1;
+            this.EnterButton.Text = "Enter";
+            this.EnterButton.UseVisualStyleBackColor = true;
+            this.EnterButton.Click += new System.EventHandler(this.EnterButton_Click);
             // 
             // EnterBox
             // 
@@ -133,7 +133,7 @@
 
         private System.Windows.Forms.TableLayoutPanel DataInputTable1;
         private System.Windows.Forms.Label label1;
-        private System.Windows.Forms.Button Enter;
+        private System.Windows.Forms.Button EnterButton;
         private System.Windows.Forms.TableLayoutPanel tableLayoutPanel1;
         private System.Windows.Forms.Button Cancel;
         private System.Windows.Forms.TextBox EnterBox;

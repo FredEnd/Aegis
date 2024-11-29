@@ -78,7 +78,7 @@ namespace Aegis
                     newChat.InitializeButton();
                     Home_Page.Messages_Panel.Controls.Add(newChat.GetButton());
                 }
-            }
+            }   
         }
 
         private void Create_Session_Click(object sender, EventArgs e)
@@ -86,7 +86,9 @@ namespace Aegis
             var SessionIDInput = SessionID_Input.Text;
             Console.WriteLine(SessionIDInput);
 
-            var SelectedPort = PortsCombo.SelectedIndex;
+            var SelectedPort = Convert.ToInt32(PortsCombo.SelectedItem);
+
+            Console.WriteLine($"{SelectedPort}, -- Selected");
 
             string encryptionMethod = EncryptionCombo.SelectedItem.ToString();
 

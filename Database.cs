@@ -12,66 +12,78 @@ namespace LocalDatabaseApp
 {
     class DB
     {
-        private static readonly string dbFilePath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..\\..\\Resources", "localdatabase.db");
+        private static string appDataFolder = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
+        private static string dbFilePath = Path.Combine(appDataFolder, "AegisData", "LocalDatabase.db");
 
         public static void Database_Check()
         {
+            string dbDirectory = Path.GetDirectoryName(dbFilePath);
+            if (!Directory.Exists(dbDirectory))
+            {
+                Directory.CreateDirectory(dbDirectory);
+                Console.WriteLine("Directory created successfully.");
+            }
+
+            MessageBox.Show(dbFilePath);
+
             if (!File.Exists(dbFilePath))
             {
-                SQLiteConnection.CreateFile(dbFilePath);
+                SQLiteConnection.CreateFile(dbFilePath); // Create the database file at the correct path
                 Console.WriteLine("DATABASE CREATED SUCCESSFULLY");
 
+                // Create the tables in the new database
                 using (SQLiteConnection connection = new SQLiteConnection($"Data Source={dbFilePath};Version=3;"))
                 {
                     connection.Open();
                     string createTableQuery = @"
-                        CREATE TABLE IF NOT EXISTS Users (
-                            UserID INTEGER PRIMARY KEY AUTOINCREMENT,
-                            IPaddress VARCHAR(45) NOT NULL,
-                            PC_NAME TEXT NOT NULL,
-                            CreatedAt TIMESTAMP DEFAULT (datetime(CURRENT_TIMESTAMP, 'localtime'))
-                        );
-                        CREATE TABLE IF NOT EXISTS Sessions (
-                            SessionID TEXT PRIMARY KEY,
-                            HostUserID INTEGER NOT NULL,
-                            EncryotionType TEXT NOT NULL,
-                            CreatedAt TIMESTAMP DEFAULT (datetime(CURRENT_TIMESTAMP, 'localtime')),
-                            Port INTEGER NOT NULL,
-                            MaxConnections INTEGER DEFAULT 10,
-                            ConnectionCount INTEGER DEFAULT 0,
-                            FOREIGN KEY (HostUserID) REFERENCES Users(UserID)
-                        );
-                        CREATE TABLE IF NOT EXISTS Session_Connections (
-                            ConnectionID INTEGER PRIMARY KEY AUTOINCREMENT,
-                            SessionID TEXT NOT NULL,
-                            UserID INTEGER NOT NULL,
-                            ConnectedAt TIMESTAMP DEFAULT (datetime(CURRENT_TIMESTAMP, 'localtime')),
-                            IsHost BOOLEAN DEFAULT 0,
-                            FOREIGN KEY (SessionID) REFERENCES Sessions(SessionID) ON DELETE CASCADE,
-                            FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE,
-                            UNIQUE (SessionID, UserID)
-                        );
-                        CREATE TABLE IF NOT EXISTS Messages (
-                            MessageID INTEGER PRIMARY KEY AUTOINCREMENT,
-                            SessionID TEXT NOT NULL,
-                            UserID INTEGER NOT NULL,
-                            Message_Content TEXT NOT NULL,
-                            Direction TEXT CHECK(Direction IN ('sent', 'received')) NOT NULL,
-                            SentAt TIMESTAMP DEFAULT (datetime(CURRENT_TIMESTAMP, 'localtime')),
-                            FOREIGN KEY (SessionID) REFERENCES Sessions(SessionID) ON DELETE CASCADE,
-                            FOREIGN KEY (UserID) REFERENCES Users(UserID)
-                        );
-                        CREATE TABLE IF NOT EXISTS Files (
-                            FileID INTEGER PRIMARY KEY AUTOINCREMENT,
-                            SessionID TEXT NOT NULL,
-                            UserID INTEGER NOT NULL,
-                            FileName TEXT NOT NULL,
-                            FilePath TEXT NOT NULL,
-                            FileSize INTEGER NOT NULL,
-                            TransferredAt TIMESTAMP DEFAULT (datetime(CURRENT_TIMESTAMP, 'localtime')),
-                            FOREIGN KEY (SessionID) REFERENCES Sessions(SessionID) ON DELETE CASCADE,
-                            FOREIGN KEY (UserID) REFERENCES Users(UserID)
-                        );";
+                    CREATE TABLE IF NOT EXISTS Users (
+                        UserID INTEGER PRIMARY KEY AUTOINCREMENT,
+                        IPaddress VARCHAR(45) NOT NULL,
+                        PC_NAME TEXT NOT NULL,
+                        CreatedAt TIMESTAMP DEFAULT (datetime(CURRENT_TIMESTAMP, 'localtime'))
+                    );
+                    CREATE TABLE IF NOT EXISTS Sessions (
+                        SessionID TEXT PRIMARY KEY,
+                        HostUserID INTEGER NOT NULL,
+                        EncryotionType TEXT NOT NULL,
+                        CreatedAt TIMESTAMP DEFAULT (datetime(CURRENT_TIMESTAMP, 'localtime')),
+                        Port INTEGER NOT NULL,
+                        MaxConnections INTEGER DEFAULT 10,
+                        ConnectionCount INTEGER DEFAULT 0,
+                        FOREIGN KEY (HostUserID) REFERENCES Users(UserID)
+                    );
+                    CREATE TABLE IF NOT EXISTS Session_Connections (
+                        ConnectionID INTEGER PRIMARY KEY AUTOINCREMENT,
+                        SessionID TEXT NOT NULL,
+                        UserID INTEGER NOT NULL,
+                        ConnectedAt TIMESTAMP DEFAULT (datetime(CURRENT_TIMESTAMP, 'localtime')),
+                        IsHost BOOLEAN DEFAULT 0,
+                        FOREIGN KEY (SessionID) REFERENCES Sessions(SessionID) ON DELETE CASCADE,
+                        FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE,
+                        UNIQUE (SessionID, UserID)
+                    );
+                    CREATE TABLE IF NOT EXISTS Messages (
+                        MessageID INTEGER PRIMARY KEY AUTOINCREMENT,
+                        SessionID TEXT NOT NULL,
+                        UserID INTEGER NOT NULL,
+                        Message_Content TEXT NOT NULL,
+                        Direction TEXT CHECK(Direction IN ('sent', 'received')) NOT NULL,
+                        SentAt TIMESTAMP DEFAULT (datetime(CURRENT_TIMESTAMP, 'localtime')),
+                        FOREIGN KEY (SessionID) REFERENCES Sessions(SessionID) ON DELETE CASCADE,
+                        FOREIGN KEY (UserID) REFERENCES Users(UserID)
+                    );
+                    CREATE TABLE IF NOT EXISTS Files (
+                        FileID INTEGER PRIMARY KEY AUTOINCREMENT,
+                        SessionID TEXT NOT NULL,
+                        UserID INTEGER NOT NULL,
+                        FileName TEXT NOT NULL,
+                        FilePath TEXT NOT NULL,
+                        FileSize INTEGER NOT NULL,
+                        TransferredAt TIMESTAMP DEFAULT (datetime(CURRENT_TIMESTAMP, 'localtime')),
+                        FOREIGN KEY (SessionID) REFERENCES Sessions(SessionID) ON DELETE CASCADE,
+                        FOREIGN KEY (UserID) REFERENCES Users(UserID)
+                    );";
+
                     using (SQLiteCommand command = new SQLiteCommand(createTableQuery, connection))
                     {
                         command.ExecuteNonQuery();
@@ -81,9 +93,10 @@ namespace LocalDatabaseApp
             }
             else
             {
-                Console.WriteLine("DB AND TABLES EXIST");
+                Console.WriteLine("DB EXISTS");
             }
-        } //Checks if the database exists
+        }
+
 
         public static string RecallDB()
         {
