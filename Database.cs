@@ -24,7 +24,6 @@ namespace LocalDatabaseApp
                 Console.WriteLine("Directory created successfully.");
             }
 
-            MessageBox.Show(dbFilePath);
 
             if (!File.Exists(dbFilePath))
             {
@@ -38,19 +37,20 @@ namespace LocalDatabaseApp
                     string createTableQuery = @"
                     CREATE TABLE IF NOT EXISTS Users (
                         UserID INTEGER PRIMARY KEY AUTOINCREMENT,
+                        UserName TEXT NOT NULL,
                         IPaddress VARCHAR(45) NOT NULL,
                         PC_NAME TEXT NOT NULL,
                         CreatedAt TIMESTAMP DEFAULT (datetime(CURRENT_TIMESTAMP, 'localtime'))
                     );
                     CREATE TABLE IF NOT EXISTS Sessions (
                         SessionID TEXT PRIMARY KEY,
-                        HostUserID INTEGER NOT NULL,
+                        HostUserID TEXT NOT NULL,
                         EncryotionType TEXT NOT NULL,
                         CreatedAt TIMESTAMP DEFAULT (datetime(CURRENT_TIMESTAMP, 'localtime')),
                         Port INTEGER NOT NULL,
                         MaxConnections INTEGER DEFAULT 10,
                         ConnectionCount INTEGER DEFAULT 0,
-                        FOREIGN KEY (HostUserID) REFERENCES Users(UserID)
+                        FOREIGN KEY (HostUserID) REFERENCES Users(UserName)
                     );
                     CREATE TABLE IF NOT EXISTS Session_Connections (
                         ConnectionID INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -59,18 +59,18 @@ namespace LocalDatabaseApp
                         ConnectedAt TIMESTAMP DEFAULT (datetime(CURRENT_TIMESTAMP, 'localtime')),
                         IsHost BOOLEAN DEFAULT 0,
                         FOREIGN KEY (SessionID) REFERENCES Sessions(SessionID) ON DELETE CASCADE,
-                        FOREIGN KEY (UserID) REFERENCES Users(UserID) ON DELETE CASCADE,
+                        FOREIGN KEY (UserID) REFERENCES Users(UserName) ON DELETE CASCADE,
                         UNIQUE (SessionID, UserID)
                     );
                     CREATE TABLE IF NOT EXISTS Messages (
                         MessageID INTEGER PRIMARY KEY AUTOINCREMENT,
                         SessionID TEXT NOT NULL,
-                        UserID INTEGER NOT NULL,
+                        UserID TEXT NOT NULL,
                         Message_Content TEXT NOT NULL,
                         Direction TEXT CHECK(Direction IN ('sent', 'received')) NOT NULL,
                         SentAt TIMESTAMP DEFAULT (datetime(CURRENT_TIMESTAMP, 'localtime')),
                         FOREIGN KEY (SessionID) REFERENCES Sessions(SessionID) ON DELETE CASCADE,
-                        FOREIGN KEY (UserID) REFERENCES Users(UserID)
+                        FOREIGN KEY (UserID) REFERENCES Users(UserName)
                     );
                     CREATE TABLE IF NOT EXISTS Files (
                         FileID INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -81,7 +81,7 @@ namespace LocalDatabaseApp
                         FileSize INTEGER NOT NULL,
                         TransferredAt TIMESTAMP DEFAULT (datetime(CURRENT_TIMESTAMP, 'localtime')),
                         FOREIGN KEY (SessionID) REFERENCES Sessions(SessionID) ON DELETE CASCADE,
-                        FOREIGN KEY (UserID) REFERENCES Users(UserID)
+                        FOREIGN KEY (UserID) REFERENCES Users(UserName)
                     );";
 
                     using (SQLiteCommand command = new SQLiteCommand(createTableQuery, connection))

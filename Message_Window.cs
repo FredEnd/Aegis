@@ -29,23 +29,60 @@ namespace Aegis
             List<(string HostUserID, string Encryption, int portNum)> sessionSettings = DB.LoadSessionSettings(sessionId);
 
             var setting = sessionSettings[0];
+            this.sessionId = sessionId;
+            this.HUserID = UserID;
 
-            if(UserID != setting.HostUserID)
+            if (UserID != setting.HostUserID)
             {
-
+                InitializeComponent();
+                _= StartUpMessages();
+                _ = InitializeMessageWindowClientAsync(IPaddress, setting.portNum);
             }
 
             else
             {
                 InitializeComponent();
-                this.sessionId = sessionId;
-                this.HUserID = UserID;
-
-                this.FormClosing += Message_Window_FormClosing;
-
+                _ = StartUpMessages();
                 _ = InitializeMessageWindowHostAsync(IPaddress, Ports);
             }
+
+            this.FormClosing += Message_Window_FormClosing;
         }
+
+        //-------------------------------------------------------------------------------------------------
+
+        private async Task InitializeMessageWindowClientAsync(string ipAddress, int port)
+        {
+            try
+            {
+                TcpClient client = new TcpClient();
+                await client.ConnectAsync(ipAddress, port);
+                Console.WriteLine($"Connected to host at {ipAddress}:{port}");
+
+                using (NetworkStream stream = client.GetStream())
+                {
+                    string message = "Hello from the client!";
+                    byte[] messageBytes = Encoding.UTF8.GetBytes(message);
+                    await stream.WriteAsync(messageBytes, 0, messageBytes.Length);
+                    Console.WriteLine("Message sent to host.");
+
+                    byte[] responseBuffer = new byte[4096];
+                    int bytesRead = await stream.ReadAsync(responseBuffer, 0, responseBuffer.Length);
+
+                    if (bytesRead > 0)
+                    {
+                        string response = Encoding.UTF8.GetString(responseBuffer, 0, bytesRead);
+                        Console.WriteLine($"Response received from host: {response}");
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Client initialization error: {ex.Message}");
+            }
+        }
+
+        //-------------------------------------------------------------------------------------------------
 
         private async Task InitializeMessageWindowHostAsync(string IPaddress, List<int> Ports)
         {
@@ -160,6 +197,8 @@ namespace Aegis
                     Console.WriteLine($"Standard message received: {command}");
 
                     DB.Create_Message(sessionId, recipentuserID, command, "recieved");
+
+                    byte[] response = Encoding.UTF8.GetBytes($"Recipient recieved message echo");
 
                     var chatData = await DB.GetMessagesBySessionAsync(sessionId);
 
@@ -335,6 +374,7 @@ namespace Aegis
         {
             var MessageInput = Input_Box.Text;
             Console.WriteLine(MessageInput);
+            Console.WriteLine(sessionId);
 
             await DB.NewMessageFromClientAsync(MessageInput, sessionId, HUserID);
             Console.WriteLine("SUCCESSFULLY WRITTEN MESSAGE");
