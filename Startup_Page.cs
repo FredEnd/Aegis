@@ -42,7 +42,7 @@ namespace Aegis
 
         public async Task WaitAndOpenHome()
         {
-            List<int> ports = await Task.Run(() => Mains.TestPorts(IPaddress, 0, 1000));
+            List<int> ports = await Task.Run(() => Mains.TestPorts(IPaddress, 1025, 5000));
 
             Mains.play_notifercation();
             await Task.Delay(3000);

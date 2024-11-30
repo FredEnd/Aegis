@@ -47,7 +47,7 @@ namespace Aegis
             this.TargetPort = SessionInfo.port;
             this.TargetSession = SessionInfo.sessionID;
 
-            string sessionData = await RequestSessionDataAsync(TargetIP, TargetPort, TargetSession, Settings);
+            string sessionData = await RequestSessionDataAsync(TargetIP, TargetPort, TargetSession);
 
             HandleResponse(sessionData);
 
@@ -68,7 +68,7 @@ namespace Aegis
             this.Close();
         }
 
-        private async Task<string> RequestSessionDataAsync(string ip, int port, string sessionID, Settings)
+        private async Task<string> RequestSessionDataAsync(string ip, int port, string sessionID)
         {
             try
             {

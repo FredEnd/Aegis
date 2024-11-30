@@ -362,7 +362,7 @@ namespace Aegis
         public void OpenSessionForm()
         {
             Screen currentScreen = Screen.FromControl(sessionButton);
-            Message_Window sessionForm = new Message_Window(sessionID, UserID, IPaddress, Ports);
+            Message_Window sessionForm = new Message_Window(sessionID, UserID, IPaddress, Ports, appSettings);
 
             // Check the theme in the settings and apply the appropriate colors
             if (appSettings.Theme == "Dark")
