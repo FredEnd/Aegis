@@ -26,7 +26,15 @@ namespace Aegis
 
             System_IP.Text = "Public IP Address: " + publicIP;
 
-            DB.Database_Check();
+            try
+            {
+                DB.Database_Check();
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in Database_Check: {ex.Message}");
+            }
+
             //DB.Database_Test_Input_sessions(pcName, publicIP);
 
             _ = WaitAndOpenHome();

@@ -43,14 +43,12 @@ namespace Aegis_main
         public static async void play_notifercation()
         {
             string baseDir = AppDomain.CurrentDomain.BaseDirectory;
+            Console.WriteLine("base Dir -- ", baseDir);
 
-            // Navigate back one directory to the Aegis folder
-            string resourcesPath = Path.Combine(baseDir, "..\\..\\Resources");
+            string notificationPath = Path.Combine(baseDir, "Resources", "Notification.mp3");
+            Console.WriteLine("Not Path --", notificationPath);
 
-            // Combine and new working db path
-            string notificationPath = Path.Combine(resourcesPath, "Notification.mp3");
-
-            // Run the audio playback in a separate task
+  
             await Task.Run(() =>
             {
                 using (var audio = new AudioFileReader(notificationPath))
@@ -59,10 +57,9 @@ namespace Aegis_main
                     outputDevice.Init(audio);
                     outputDevice.Play();
 
-                    // Wait until playback is finished
                     while (outputDevice.PlaybackState == PlaybackState.Playing)
                     {
-                        Thread.Sleep(100); // Keep checking playback state
+                        Thread.Sleep(100);
                     }
                 }
             });
@@ -156,29 +153,23 @@ namespace Aegis_main
 
         //-------------------------------------------------------------------------------------------------
 
-        public static async Task StartServerAsync(int port)
+        public static async Task<TcpClient> AcceptClientAsync(TcpListener listener)
         {
-            TcpListener listener = new TcpListener(IPAddress.Any, port);
-            listener.Start();
-            Console.WriteLine($"Server listening on port {port}...");
-
-            while (true)
+            try
             {
-                try
-                {
-                    TcpClient client = await listener.AcceptTcpClientAsync();
-                    Console.WriteLine("Client connected!");
-
-                    _ = HandleClientAsync(client);
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine($"Server error: {ex.Message}");
-                }
+                TcpClient client = await listener.AcceptTcpClientAsync();
+                Console.WriteLine("Client connected!");
+                return client;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Server error: {ex.Message}");
+                return null;
             }
         }
 
-        public static async Task HandleClientAsync(TcpClient client)
+
+        public static async Task<string> HandleClientAsync(TcpClient client)
         {
             using (NetworkStream stream = client.GetStream())
             {
@@ -192,10 +183,13 @@ namespace Aegis_main
                         if (bytesRead == 0) break;
 
                         string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-                        Console.WriteLine($"Received: {message}");
 
+                        return message;
+
+                        /*
                         byte[] response = Encoding.UTF8.GetBytes($"Echo: {message}");
                         await stream.WriteAsync(response, 0, response.Length);
+                        */
                     }
                     catch (Exception ex)
                     {
@@ -206,48 +200,56 @@ namespace Aegis_main
             }
 
             Console.WriteLine("Client disconnected.");
+            return null;
         }
 
-        
 
-        public async Task ConnectAsync(string ipAddress, int Port)
+
+        public static async Task<(TcpClient client, NetworkStream stream)> ConnectAsync(string ipAddress, int port)
         {
-            TcpClient _client;
-            NetworkStream _stream;
-            string ClientMessage = "";
+            TcpClient client = null;
+            NetworkStream stream = null;
 
             try
             {
-                _client = new TcpClient();
+                client = new TcpClient();
+                await client.ConnectAsync(ipAddress, port);
+                Console.WriteLine($"Connected to {ipAddress}:{port}");
 
-                await _client.ConnectAsync(ipAddress, Port);
-                Console.WriteLine($"Connected to {ipAddress}:{Port}");
+                stream = client.GetStream();
 
-                _stream = _client.GetStream();
-
-                Task listenTask = Task.Run(() => ListenForMessagesAsync());
-
-                await SendMessageAsync(ClientMessage, _stream);
-
-                await listenTask;
+                _ = Task.Run(() => ListenForMessagesAsync(stream));
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error connecting to peer: {ex.Message}");
             }
+            return (client, stream);
         }
 
-        public async Task SendMessageAsync(string message, NetworkStream _stream)
+        private static async Task ListenForMessagesAsync(NetworkStream stream)
         {
+            byte[] buffer = new byte[4096];
+
             try
             {
-                byte[] data = Encoding.UTF8.GetBytes(message);
-                await _stream.WriteAsync(data, 0, data.Length);
-                Console.WriteLine($"Sent: {message}");
+                while (true)
+                {
+                    int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
+
+                    if (bytesRead == 0)
+                    {
+                        MessageBox.Show("Connection closed by remote peer.");
+                        break;
+                    }
+
+                    string receivedMessage = Encoding.UTF8.GetString(buffer, 0, bytesRead);
+                    Console.WriteLine($"Received: {receivedMessage}");
+                }
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error sending message: {ex.Message}");
+                Console.WriteLine($"Error while listening for messages: {ex.Message}");
             }
         }
 
