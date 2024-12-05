@@ -12,6 +12,7 @@ using System.Net.Sockets;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices.ComTypes;
+using System.Net.NetworkInformation;
 
 namespace Aegis_main
 {
@@ -32,6 +33,19 @@ namespace Aegis_main
                 Console.WriteLine("Unable to get public IP: " + ex.Message);
                 return "null";
             }
+        }
+
+        public static string GetLocalIPAddress()
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (var ip in host.AddressList)
+            {
+                if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                {
+                    return ip.ToString();
+                }
+            }
+            throw new Exception("No network adapters with an IPv4 address in the system!");
         }
 
         public static void Forms_FormClosing(object sender, FormClosingEventArgs e)
@@ -72,37 +86,101 @@ namespace Aegis_main
             DES
         }
 
-        public static List<int> TestPorts(string ipAddress, int startPort, int endPort, int timeout = 100)
+        public static Task<List<int>> TestLocalPortsAsync(string localIpAddress, int startPort, int endPort)
         {
-            var openPorts = new List<int>();
+            var availablePorts = new List<int>();
             object lockObj = new object();
 
-            Parallel.For(startPort, endPort + 1, port =>
+            if (!IPAddress.TryParse(localIpAddress, out IPAddress ipAddress))
             {
-                using (TcpClient client = new TcpClient())
+                Console.WriteLine($"Invalid IP Address: {localIpAddress}");
+                return Task.FromResult(availablePorts);
+            }
+
+            Console.WriteLine(startPort);
+            Console.WriteLine(endPort);
+
+            for (int port = startPort; port <= endPort; port++)
+            {
+                Console.WriteLine(port);
+                
+                try
+                {
+                    TcpListener listener = new TcpListener(ipAddress, port);
+                    listener.Start();
+
+                    lock (lockObj)
+                    {
+                        availablePorts.Add(port);
+                    }
+
+                    Console.WriteLine($"Port {port} on {localIpAddress} is available and can be used for listening.");
+                    listener.Stop();
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Port {port} on {localIpAddress} is not available or there was an error: {ex.Message}");
+                }
+            }
+            return Task.FromResult(availablePorts);
+        }
+
+
+
+        public static async Task<List<int>> TestPortsAsync(string ipAddress, int startPort, int endPort, int timeout = 100)
+        {
+            var openPorts = new List<int>();
+            var tasks = new List<Task>();
+
+            for (int port = startPort; port <= endPort; port++)
+            {
+                int currentPort = port;
+
+                tasks.Add(Task.Run(async () =>
                 {
                     try
                     {
-                        var connectTask = client.ConnectAsync(ipAddress, port);
-                        bool connected = connectTask.Wait(timeout);
+                        TcpListener listener = new TcpListener(IPAddress.Parse(ipAddress), currentPort);
+                        listener.Start();
+
+                        var listenerTask = listener.AcceptSocketAsync();
+                        bool connected = await Task.WhenAny(listenerTask, Task.Delay(timeout)) == listenerTask;
+
                         if (connected)
                         {
-                            lock (lockObj)
+                            using (Socket socket = listenerTask.Result)
                             {
-                                openPorts.Add(port);
+                                byte[] buffer = new byte[4096];
+                                int bytesRead = await socket.ReceiveAsync(new ArraySegment<byte>(buffer), SocketFlags.None);
+
+                                if (bytesRead > 0)
+                                {
+                                    openPorts.Add(currentPort);
+                                    Console.WriteLine($"Port {currentPort} is open and responsive!");
+                                }
+                                else
+                                {
+                                    Console.WriteLine($"Port {currentPort} is open, but no response received.");
+                                }
                             }
-                            Console.WriteLine($"Port {port} is open!");
+                        }
+                        else
+                        {
+                            Console.WriteLine($"Port {currentPort} is not available within the timeout.");
                         }
                     }
-                    catch (Exception)
+                    catch (Exception ex)
                     {
-                        Console.WriteLine($"Port {port} is closed.");
+                        Console.WriteLine($"Error on port {currentPort}: {ex.Message}");
                     }
-                }
-            });
+                }));
+            }
+
+            await Task.WhenAll(tasks);
 
             return openPorts;
         }
+
 
 
         //-------------------------------------------------------------------------------------------------
@@ -169,38 +247,28 @@ namespace Aegis_main
         }
 
 
-        public static async Task<string> HandleClientAsync(TcpClient client)
+        public static async Task<(string ReceivedMessage, NetworkStream Stream)> HandleClientAsync(TcpClient client)
         {
-            using (NetworkStream stream = client.GetStream())
+            Console.WriteLine("Receiving message and converting to string.");
+            try
             {
-                byte[] buffer = new byte[1024];
+                NetworkStream stream = client.GetStream();
+                byte[] buffer = new byte[4096];
+                int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
 
-                while (true)
+                if (bytesRead > 0)
                 {
-                    try
-                    {
-                        int bytesRead = await stream.ReadAsync(buffer, 0, buffer.Length);
-                        if (bytesRead == 0) break;
+                    string receivedMessage = Encoding.UTF32.GetString(buffer, 0, bytesRead);
+                    Console.WriteLine($"Server received: {receivedMessage}");
 
-                        string message = Encoding.UTF8.GetString(buffer, 0, bytesRead);
-
-                        return message;
-
-                        /*
-                        byte[] response = Encoding.UTF8.GetBytes($"Echo: {message}");
-                        await stream.WriteAsync(response, 0, response.Length);
-                        */
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"Error handling client: {ex.Message}");
-                        break;
-                    }
+                    return (receivedMessage, stream);
                 }
             }
-
-            Console.WriteLine("Client disconnected.");
-            return null;
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error handling client: {ex.Message}");
+            }
+            return (null, null);
         }
 
 
