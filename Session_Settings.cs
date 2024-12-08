@@ -84,12 +84,26 @@ namespace Aegis
         private void Create_Session_Click(object sender, EventArgs e)
         {
             var SessionIDInput = SessionID_Input.Text;
+            if (string.IsNullOrWhiteSpace(SessionIDInput))
+            {
+                MessageBox.Show("Session ID cannot be null or empty.");
+                return;
+            }
             Console.WriteLine(SessionIDInput);
 
+            if (PortsCombo.SelectedItem == null)
+            {
+                MessageBox.Show("No port selected.");
+                return;
+            }
             var SelectedPort = Convert.ToInt32(PortsCombo.SelectedItem);
-
             Console.WriteLine($"{SelectedPort}, -- Selected");
 
+            if (EncryptionCombo.SelectedItem == null)
+            {
+                MessageBox.Show("No encryption method selected.");
+                return;
+            }
             string encryptionMethod = EncryptionCombo.SelectedItem.ToString();
 
             Session newSession = new Session(SessionIDInput, pcName, encryptionMethod, SelectedPort);
@@ -97,6 +111,9 @@ namespace Aegis
             newSession.Add_Session();
 
             Refresh_Sessions();
+
+            this.Close();
+
         }
     }
 }

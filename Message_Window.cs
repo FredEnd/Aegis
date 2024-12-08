@@ -22,10 +22,12 @@ namespace Aegis
     {
         private FlowLayoutPanel flowLayoutPanel;
         private readonly string sessionId;
+        public string IPaddress;
         public string HUserID;
         public string CUserID;
         public string EncryptionType;
         private Settings AppSettings;
+        private NetworkStream CurrentStream;
         private CancellationTokenSource _cancellationTokenSource = new CancellationTokenSource();
         private TcpListener CurrentListener;
 
@@ -39,12 +41,13 @@ namespace Aegis
             this.HUserID = setting.HostUserID;
             this.CUserID = UserID;
             this.AppSettings = Appsettings;
+            this.IPaddress = IPaddress;
 
             if (UserID != setting.HostUserID)
             {
                 InitializeComponent();
                 _= StartUpMessages();
-                _ = InitializeMessageWindowClientAsync(IPaddress, setting.portNum);
+                InitializeMessageWindowClientAsync(IPaddress, setting.portNum);
             }
 
             else
@@ -59,24 +62,31 @@ namespace Aegis
 
         //-------------------------------------------------------------------------------------------------
 
-        private async Task InitializeMessageWindowClientAsync(string ipAddress, int port)
+        private void InitializeMessageWindowClientAsync(string ipAddress, int port)
         {
+            Console.WriteLine("client version");
+        }
+
+        private async Task sendMessageToListener(string message)
+        {
+            List<(string HostUserID, string Encryption, int portNum)> sessionSettings = DB.LoadSessionSettings(sessionId);
+
+            var setting = sessionSettings[0];
+
             try
             {
                 using (TcpClient client = new TcpClient())
                 {
-                    await client.ConnectAsync(ipAddress, port);
-                    Console.WriteLine($"Connected to server {ipAddress}:{port}");
+                    await client.ConnectAsync(IPaddress, setting.portNum);
+                    Console.WriteLine($"Connected to server {IPaddress}:{setting.portNum}");
 
                     using (NetworkStream stream = client.GetStream())
                     {
-                        // Send a startup message
-                        string startupMessage = $"USERID:{HUserID}";
+                        string startupMessage = $"USERID:{CUserID} |{message}";
                         byte[] messageBytes = Encoding.UTF32.GetBytes(startupMessage);
                         await stream.WriteAsync(messageBytes, 0, messageBytes.Length);
                         Console.WriteLine("Startup message sent.");
 
-                        // Optionally, handle server responses
                         byte[] responseBuffer = new byte[4096];
                         int bytesRead = await stream.ReadAsync(responseBuffer, 0, responseBuffer.Length);
 
@@ -151,6 +161,8 @@ namespace Aegis
                             {
                                 var (message, stream) = await Mains.HandleClientAsync(newClient);
 
+                                this.CurrentStream = stream;
+
                                 if (string.IsNullOrEmpty(message))
                                 {
                                     Console.WriteLine("nullMessage");
@@ -216,12 +228,29 @@ namespace Aegis
 
         private void StopServer()
         {
-            _cancellationTokenSource.Cancel();
-            if (CUserID != HUserID)
+            try
             {
-                CurrentListener.Stop();
+                if (_cancellationTokenSource != null)
+                {
+                    _cancellationTokenSource.Cancel();
+                    _cancellationTokenSource.Dispose();
+                    _cancellationTokenSource = null;
+                }
+
+                if (CUserID != HUserID && CurrentListener != null)
+                {
+                    CurrentListener.Stop();
+                    CurrentListener = null;
+                }
+
+                Console.WriteLine("Server stopped successfully.");
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error stopping server: {ex.Message}");
             }
         }
+
 
         //-------------------------------------------------------------------------------------------------
 
@@ -444,7 +473,14 @@ namespace Aegis
 
         private void Emoji_Button_Click(object sender, EventArgs e)
         {
+            EmojiForm emojiPanelForm = new EmojiForm(this.Input_Box);
+            Screen currentScreen = Screen.FromControl(this);
+            emojiPanelForm.StartPosition = FormStartPosition.Manual;
+            emojiPanelForm.Location = currentScreen.WorkingArea.Location;
 
+            emojiPanelForm.Show();
+
+            Console.WriteLine("EmojiBox Shown");
         }
 
         private void File_Upload_Button_Click(object sender, EventArgs e)
@@ -454,46 +490,71 @@ namespace Aegis
 
         private async void Send_button_Click(object sender, EventArgs e)
         {
-            var MessageInput = Input_Box.Text;
-            Console.WriteLine(MessageInput);
-            Console.WriteLine(sessionId);
-
-            await DB.NewMessageFromClientAsync(MessageInput, sessionId, HUserID);
-            Console.WriteLine("SUCCESSFULLY WRITTEN MESSAGE");
-
-            Input_Box.Text = null;
-
-            var chatData = await DB.GetMessagesBySessionAsync(sessionId);
-
-            if (chatData == null || chatData.Count == 0)
+            if (CurrentStream != null)
             {
-                Console.WriteLine("NO MESSAGES");
+
+                var MessageInput = Input_Box.Text;
+                Console.WriteLine(MessageInput);
+                Console.WriteLine(sessionId);
+
+                await DB.NewMessageFromClientAsync(MessageInput, sessionId, HUserID);
+                Console.WriteLine("SUCCESSFULLY WRITTEN MESSAGE");
+
+                if (HUserID != CUserID)
+                {
+                    await sendMessageToListener(MessageInput);
+                }
+
+                else if (HUserID == CUserID)
+                {
+                    using (CurrentStream)
+                    {
+                        byte[] response = Encoding.UTF32.GetBytes(MessageInput);
+                        await CurrentStream.WriteAsync(response, 0, response.Length);
+
+                    }
+                }
+
+                Input_Box.Text = null;
+
+                var chatData = await DB.GetMessagesBySessionAsync(sessionId);
+
+                if (chatData == null || chatData.Count == 0)
+                {
+                    Console.WriteLine("NO MESSAGES");
+                }
+                else
+                {
+                    MessageTable.Controls.Clear();
+
+                    foreach (var message in chatData)
+                    {
+                        var messageInstance = new Message(CUserID, message.Direction, message.MessageContent, message.SentAt);
+                        var messagePanel = messageInstance.CreateMessagePanel();
+
+                        messagePanel.AutoSize = true;
+                        messagePanel.AutoSizeMode = AutoSizeMode.GrowOnly;
+                        messagePanel.Dock = DockStyle.Top;
+
+                        int columnIndex = message.Direction == "sent" ? 1 : 0;
+
+                        MessageTable.Controls.Add(messagePanel, columnIndex, MessageTable.RowCount);
+
+                        MessageTable.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+                        MessageTable.RowCount++;
+
+                        for (int i = 0; i < MessageTable.RowCount; i++)
+                        {
+                            MessageTable.RowStyles[i] = new RowStyle(SizeType.AutoSize);
+                        }
+                    }
+                }
             }
             else
             {
-                MessageTable.Controls.Clear();
-
-                foreach (var message in chatData)
-                {
-                    var messageInstance = new Message(CUserID, message.Direction, message.MessageContent, message.SentAt);
-                    var messagePanel = messageInstance.CreateMessagePanel();
-
-                    messagePanel.AutoSize = true;
-                    messagePanel.AutoSizeMode = AutoSizeMode.GrowOnly;
-                    messagePanel.Dock = DockStyle.Top;
-
-                    int columnIndex = message.Direction == "sent" ? 1 : 0;
-
-                    MessageTable.Controls.Add(messagePanel, columnIndex, MessageTable.RowCount);
-
-                    MessageTable.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-                    MessageTable.RowCount++;
-
-                    for (int i = 0; i < MessageTable.RowCount; i++)
-                    {
-                        MessageTable.RowStyles[i] = new RowStyle(SizeType.AutoSize);
-                    }
-                }
+                Console.WriteLine("No Stream / TCP Connection");
+                MessageBox.Show("No Stream / TCP Connection");
+                Input_Box = null;
             }
         }
     }
