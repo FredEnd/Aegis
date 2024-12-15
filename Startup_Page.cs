@@ -22,6 +22,7 @@ namespace Aegis
             dialog.button1.Text = "Local";
             dialog.button2.Text = "Public";
 
+            Mains.ExampleUsage();
 
             DialogResult result = dialog.ShowDialog();
             

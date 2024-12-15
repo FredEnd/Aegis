@@ -62,7 +62,7 @@ namespace Aegis_main
             string notificationPath = Path.Combine(baseDir, "Resources", "Notification.mp3");
             Console.WriteLine("Not Path --", notificationPath);
 
-  
+
             await Task.Run(() =>
             {
                 using (var audio = new AudioFileReader(notificationPath))
@@ -103,7 +103,7 @@ namespace Aegis_main
             for (int port = startPort; port <= endPort; port++)
             {
                 Console.WriteLine(port);
-                
+
                 try
                 {
                     TcpListener listener = new TcpListener(ipAddress, port);
@@ -185,13 +185,13 @@ namespace Aegis_main
 
         //-------------------------------------------------------------------------------------------------
 
-        public static string GenerateSessionCode(string ipAddress, int port, string sessionID)
+        public static string GenerateSessionCode(string ipAddress, int port, string sessionID, string host, string encryption)
         {
-            Console.WriteLine($"{ipAddress},{port}, {sessionID}");
+            Console.WriteLine($"{ipAddress}, {port}, {sessionID}, {host}, {encryption}");
 
-            if (string.IsNullOrWhiteSpace(ipAddress) || string.IsNullOrWhiteSpace(sessionID))
+            if (string.IsNullOrWhiteSpace(ipAddress) || string.IsNullOrWhiteSpace(sessionID) || string.IsNullOrWhiteSpace(encryption))
             {
-                throw new ArgumentException("IP address and SessionID must not be empty.");
+                throw new ArgumentException("IP address, SessionID, and Encryption must not be empty.");
             }
 
             if (port < 0 || port > 65535)
@@ -199,34 +199,68 @@ namespace Aegis_main
                 throw new ArgumentOutOfRangeException(nameof(port), "Port must be in the range 0-65535.");
             }
 
-            return $"{ipAddress}/{port}/{sessionID}";
+            return $"{ipAddress}/{port}/{sessionID}/{host}/{encryption}";
         }
 
-        public static (string ipAddress, int port, string sessionID) InfoFromSessionCode(string sessionCode)
+
+        public static (string ipAddress, int port, string sessionID, string host, string encryption) InfoFromSessionCode(string sessionCode)
         {
             if (string.IsNullOrWhiteSpace(sessionCode))
             {
-                throw new ArgumentException("Session code must not be empty or null.");
+                MessageBox.Show("Session code must not be empty or null.");
+                throw new ArgumentException("Session code cannot be null or empty.");
             }
 
             string[] parts = sessionCode.Split('/');
 
-            if (parts.Length < 3)
+            if (parts.Length < 5)
             {
-                throw new FormatException("Invalid session code format. Expected format: IPaddress.Port.SessionID");
+                MessageBox.Show("Invalid session code format. Expected format: IPaddress/Port/SessionID/HostID/Encryption.");
+                throw new FormatException("Session code is missing required parts. Expected format: IPaddress/Port/SessionID/HostID/Encryption.");
             }
 
-            string ipAddress = string.Join(".", parts.Take(parts.Length - 2));
+            string ipAddress = parts[0];
 
-            if (!int.TryParse(parts[parts.Length - 2], out int port) || port < 0 || port > 65535)
+            if (string.IsNullOrWhiteSpace(ipAddress))
             {
-                throw new FormatException("Invalid port value in session code.");
+                MessageBox.Show("IP address must not be empty.");
+                throw new ArgumentException("IP address cannot be null or empty.");
             }
 
-            string sessionID = parts[parts.Length - 1];
+            if (!int.TryParse(parts[1], out int port) || port < 0 || port > 65535)
+            {
+                MessageBox.Show("Port must be a number between 0 and 65535.");
+                throw new FormatException("Port must be between 0 and 65535.");
+            }
 
-            return (ipAddress, port, sessionID);
+            string sessionID = parts[2];
+
+            if (string.IsNullOrWhiteSpace(sessionID))
+            {
+                MessageBox.Show("Session ID must not be empty.");
+                throw new ArgumentException("Session ID cannot be null or empty.");
+            }
+
+            string host = parts[3];
+
+            if (string.IsNullOrWhiteSpace(host))
+            {
+                MessageBox.Show("Host must not be empty.");
+                throw new ArgumentException("Host cannot be null or empty.");
+            }
+
+            string encryption = parts[4];
+
+            if (string.IsNullOrWhiteSpace(encryption))
+            {
+                MessageBox.Show("Encryption must not be empty.");
+                throw new ArgumentException("Encryption cannot be null or empty.");
+            }
+
+            return (ipAddress, port, sessionID, host, encryption);
         }
+
+
 
 
         //-------------------------------------------------------------------------------------------------
@@ -324,7 +358,43 @@ namespace Aegis_main
 
         //-------------------------------------------------------------------------------------------------
 
-        public static List<string> EncryptDataInChunks(string data, EncryptionType encryptionType, int chunkSize = 1024)
+        // encrypts string for transport via TCP
+        public static (List<string> EncryptedDataChunks, string EncryptedKey, string IV) EncryptDataWithKeyTransport(
+            string data,
+            string encryptionType,
+            RSAParameters receiverPublicKey,
+            int chunkSize = 245)
+        {
+            if (encryptionType.ToUpper() == "RSA")
+            {
+                List<string> encryptedDataChunks = EncryptDataInChunksWithRSA(data, receiverPublicKey, chunkSize);
+
+                return (encryptedDataChunks, null, null);
+            }
+            else
+            {
+                byte[] symmetricKey = GenerateRandomKey(32);
+                byte[] iv = GenerateRandomKey(16);
+
+                List<string> encryptedDataChunks = EncryptDataInChunks(data, encryptionType, symmetricKey, iv, chunkSize);
+
+                byte[] encryptedKey = EncryptSymmetricKeyWithRSA(symmetricKey, receiverPublicKey);
+
+                if (iv != null)
+                {
+                    string responseIV = Convert.ToBase64String(iv);
+                    return (encryptedDataChunks, Convert.ToBase64String(encryptedKey), responseIV);
+                }
+                else
+                {
+                    return (encryptedDataChunks, Convert.ToBase64String(encryptedKey), null);
+                }
+            }
+        }
+
+
+        //Encrypts UTF 32 data chunks into the designated encryption type returns string of data.
+        public static List<string> EncryptDataInChunks(string data, string encryptionType, byte[] symmetricKey, byte[] iv, int chunkSize = 1024)
         {
             List<string> encryptedChunks = new List<string>();
             byte[] dataBytes = Encoding.UTF32.GetBytes(data);
@@ -335,34 +405,57 @@ namespace Aegis_main
                 byte[] chunk = new byte[currentChunkSize];
                 Array.Copy(dataBytes, i, chunk, 0, currentChunkSize);
 
-                byte[] encryptedBytes = EncryptChunk(chunk, encryptionType);
+                byte[] encryptedBytes = EncryptChunk(chunk, encryptionType, symmetricKey, iv);
+
+                // Convert to Base64 and add to the list
                 encryptedChunks.Add(Convert.ToBase64String(encryptedBytes));
             }
 
             return encryptedChunks;
         }
 
-        private static byte[] EncryptChunk(byte[] chunk, EncryptionType encryptionType)
+        // RSA
+        private static List<string> EncryptDataInChunksWithRSA(string data, RSAParameters publicKey, int chunkSize)
         {
-            switch (encryptionType)
+            List<string> encryptedChunks = new List<string>();
+            byte[] dataBytes = Encoding.UTF32.GetBytes(data);
+
+            for (int i = 0; i < dataBytes.Length; i += chunkSize)
             {
-                case EncryptionType.AES:
-                    return EncryptWithAES(chunk);
-                case EncryptionType.RSA:
-                    return EncryptWithRSA(chunk);
-                case EncryptionType.DES:
-                    return EncryptWithDES(chunk);
+                int currentChunkSize = Math.Min(chunkSize, dataBytes.Length - i);
+                byte[] chunk = new byte[currentChunkSize];
+                Array.Copy(dataBytes, i, chunk, 0, currentChunkSize);
+
+                byte[] encryptedBytes = EncryptWithRSA(chunk, publicKey);
+
+                // Convert to Base64 and add to the list
+                encryptedChunks.Add(Convert.ToBase64String(encryptedBytes));
+            }
+
+            return encryptedChunks;
+        }
+
+        // IV encryption selections
+        private static byte[] EncryptChunk(byte[] chunk, string encryptionType, byte[] key, byte[] iv)
+        {
+            switch (encryptionType.ToUpper()) // Convert to uppercase for consistency
+            {
+                case "AES":
+                    return EncryptWithAES(chunk, key, iv);
+                case "DES":
+                    return EncryptWithDES(chunk, key, iv);
                 default:
-                    throw new ArgumentException("Unsupported encryption type.");
+                    throw new ArgumentException("Unsupported encryption type for chunk encryption.");
             }
         }
 
-        private static byte[] EncryptWithAES(byte[] dataBytes)
+        //AES
+        private static byte[] EncryptWithAES(byte[] dataBytes, byte[] key, byte[] iv)
         {
             using (Aes aesAlg = Aes.Create())
             {
-                aesAlg.Key = GenerateRandomKey(aesAlg.KeySize / 8);
-                aesAlg.IV = GenerateRandomKey(aesAlg.BlockSize / 8);
+                aesAlg.Key = key;
+                aesAlg.IV = iv;
 
                 using (ICryptoTransform encryptor = aesAlg.CreateEncryptor(aesAlg.Key, aesAlg.IV))
                 using (MemoryStream msEncrypt = new MemoryStream())
@@ -375,21 +468,13 @@ namespace Aegis_main
             }
         }
 
-        private static byte[] EncryptWithRSA(byte[] dataBytes)
-        {
-            using (RSA rsa = RSA.Create())
-            {
-                rsa.KeySize = 2048;
-                return rsa.Encrypt(dataBytes, RSAEncryptionPadding.OaepSHA256);
-            }
-        }
-
-        private static byte[] EncryptWithDES(byte[] dataBytes)
+        //DES
+        private static byte[] EncryptWithDES(byte[] dataBytes, byte[] key, byte[] iv)
         {
             using (DESCryptoServiceProvider des = new DESCryptoServiceProvider())
             {
-                des.Key = GenerateRandomKey(8);
-                des.IV = GenerateRandomKey(8); 
+                des.Key = key;
+                des.IV = iv;
 
                 using (ICryptoTransform encryptor = des.CreateEncryptor(des.Key, des.IV))
                 using (MemoryStream msEncrypt = new MemoryStream())
@@ -402,6 +487,38 @@ namespace Aegis_main
             }
         }
 
+        //RSA standard encryption
+        private static byte[] EncryptWithRSA(byte[] dataBytes, RSAParameters publicKey)
+        {
+            using (RSA rsa = RSA.Create())
+            {
+                rsa.ImportParameters(publicKey);
+                return rsa.Encrypt(dataBytes, RSAEncryptionPadding.OaepSHA256);
+            }
+        }
+
+        //key encryption
+        public static byte[] EncryptSymmetricKeyWithRSA(byte[] key, RSAParameters publicKey)
+        {
+            using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider())
+            {
+                rsa.ImportParameters(publicKey);
+                return rsa.Encrypt(key, false);
+            }
+        }
+
+
+        // key pair creation
+        public static (RSAParameters PublicKey, RSAParameters PrivateKey) GenerateRSAKeyPair()
+        {
+            using (RSA rsa = RSA.Create())
+            {
+                rsa.KeySize = 2048;
+                return (rsa.ExportParameters(false), rsa.ExportParameters(true)); // Public and Private keys
+            }
+        }
+
+        // random key generator
         private static byte[] GenerateRandomKey(int size)
         {
             byte[] key = new byte[size];
@@ -410,6 +527,163 @@ namespace Aegis_main
                 rng.GetBytes(key);
             }
             return key;
+        }
+
+
+        //-------------------------------------------------------------------------------------------------
+
+        // Takes the transported data and key and decrpts them
+        public static string DecryptDataWithKeyTransport(
+             List<string> encryptedDataChunks,
+             string encryptedKey,
+             string encryptionType,
+             RSAParameters receiverPrivateKey,
+             string ivString)
+        {
+            byte[] iv = null;
+
+            if (encryptionType.ToUpper() != "RSA")
+            {
+                if (ivString == null)
+                {
+                    throw new ArgumentNullException(nameof(ivString), "IV cannot be null for non-RSA encryption.");
+                }
+                iv = Convert.FromBase64String(ivString);
+            }
+
+            byte[] symmetricKey = null;
+
+            if (encryptionType.ToUpper() != "RSA")
+            {
+                if (string.IsNullOrEmpty(encryptedKey))
+                {
+                    throw new ArgumentNullException(nameof(encryptedKey), "Encrypted key cannot be null or empty for non-RSA encryption.");
+                }
+                symmetricKey = DecryptSymmetricKeyWithRSA(Convert.FromBase64String(encryptedKey), receiverPrivateKey);
+            }
+
+            string decryptedData = DecryptDataChunks(encryptedDataChunks, encryptionType, symmetricKey, iv);
+            return decryptedData;
+        }
+
+
+
+        private static string DecryptDataChunksWithRSA(List<string> encryptedChunks, RSAParameters privateKey)
+        {
+            List<byte> decryptedBytes = new List<byte>();
+
+            foreach (string encryptedChunk in encryptedChunks)
+            {
+                byte[] encryptedData = Convert.FromBase64String(encryptedChunk);
+                byte[] decryptedChunk = DecryptWithRSA(encryptedData, privateKey);
+                decryptedBytes.AddRange(decryptedChunk);
+            }
+
+            return Encoding.UTF32.GetString(decryptedBytes.ToArray());
+        }
+
+        private static string DecryptDataChunks(List<string> encryptedChunks, string encryptionType, byte[] key, byte[] iv)
+        {
+            List<byte> decryptedBytes = new List<byte>();
+
+            foreach (string encryptedChunk in encryptedChunks)
+            {
+                byte[] encryptedData = Convert.FromBase64String(encryptedChunk);
+                byte[] decryptedChunk = DecryptChunk(encryptedData, encryptionType, key, iv);
+                decryptedBytes.AddRange(decryptedChunk);
+            }
+
+            return Encoding.UTF32.GetString(decryptedBytes.ToArray());
+        }
+
+        private static byte[] DecryptChunk(byte[] encryptedChunk, string encryptionType, byte[] key, byte[] iv)
+        {
+            switch (encryptionType.ToUpper())
+            {
+                case "AES":
+                    return DecryptWithAES(encryptedChunk, key, iv);
+                case "DES":
+                    return DecryptWithDES(encryptedChunk, key, iv);
+                default:
+                    throw new ArgumentException("Unsupported encryption type for chunk decryption.");
+            }
+        }
+
+        public static byte[] DecryptWithAES(byte[] encryptedData, byte[] key, byte[] iv)
+        {
+            if (iv == null)
+            {
+                throw new ArgumentNullException(nameof(iv), "The IV parameter cannot be null. Ensure the correct IV is passed for decryption.");
+            }
+
+            using (Aes aesAlg = Aes.Create())
+            {
+                aesAlg.Key = key;
+                aesAlg.IV = iv;
+
+                using (ICryptoTransform decryptor = aesAlg.CreateDecryptor(aesAlg.Key, aesAlg.IV))
+                using (MemoryStream msDecrypt = new MemoryStream(encryptedData))
+                using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                using (MemoryStream resultStream = new MemoryStream())
+                {
+                    csDecrypt.CopyTo(resultStream);
+                    return resultStream.ToArray();
+                }
+            }
+        }
+
+
+        public static byte[] DecryptWithDES(byte[] encryptedData, byte[] key, byte[] iv)
+        {
+            using (DESCryptoServiceProvider des = new DESCryptoServiceProvider())
+            {
+                des.Key = key;
+                des.IV = iv;
+
+                using (ICryptoTransform decryptor = des.CreateDecryptor(des.Key, des.IV))
+                using (MemoryStream msDecrypt = new MemoryStream(encryptedData))
+                using (CryptoStream csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read))
+                using (MemoryStream resultStream = new MemoryStream())
+                {
+                    csDecrypt.CopyTo(resultStream);
+                    return resultStream.ToArray();
+                }
+            }
+        }
+
+        private static byte[] DecryptWithRSA(byte[] encryptedData, RSAParameters privateKey)
+        {
+            using (RSA rsa = RSA.Create())
+            {
+                rsa.ImportParameters(privateKey);
+                return rsa.Decrypt(encryptedData, RSAEncryptionPadding.OaepSHA256);
+            }
+        }
+
+        private static byte[] DecryptSymmetricKeyWithRSA(byte[] encryptedKey, RSAParameters privateKey)
+        {
+            using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider())
+            {
+                rsa.ImportParameters(privateKey);
+                return rsa.Decrypt(encryptedKey, false);
+            }
+        }
+
+
+
+        public static void ExampleUsage()
+        {
+            var (publicKey, privateKey) = GenerateRSAKeyPair();
+
+            string data = "This is a secure message.";
+            string encryptionType = "AES"; 
+
+            var (encryptedChunks, encryptedKey, iv) = EncryptDataWithKeyTransport(data, encryptionType, publicKey);
+
+            string decryptedData = DecryptDataWithKeyTransport(encryptedChunks, encryptedKey, encryptionType, privateKey, iv);
+
+            Console.WriteLine($"Original Data: {data}");
+            Console.WriteLine($"Decrypted Data: {decryptedData}");
         }
     }
 }

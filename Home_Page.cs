@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Drawing;
+using System.Net.Sockets;
 using System.Windows.Forms;
 using Aegis.Properties;
 using Aegis_main;
@@ -16,8 +17,8 @@ namespace Aegis
         private List<int> Ports;
         private string IPaddress;
         private string pcName;
-        
 
+        public Dictionary<string, TcpClient> connectedClients = new Dictionary<string, TcpClient>();
 
         public Home_Page(string IPaddress, List<int> Ports, string pcName)
         {
@@ -51,7 +52,7 @@ namespace Aegis
                 {
                     foreach (var session in chatSessions)
                     {
-                        ChatSessionButton newChat = new ChatSessionButton(session.SessionID, session.CreatedAt, CurrentAppSettings, pcName, IPaddress, Ports);
+                        ChatSessionButton newChat = new ChatSessionButton(session.SessionID, session.CreatedAt, CurrentAppSettings, pcName, IPaddress, Ports, this.connectedClients);
                         newChat.InitializeButton();
                         Messages_Panel.Controls.Add(newChat.GetButton());
                     }
@@ -59,6 +60,25 @@ namespace Aegis
             }
         }
 
+        public void Refresh_Sessions()
+        {
+            Messages_Panel.Controls.Clear();
+
+            var chatSessions = DB.LoadChatSessions();
+            if (chatSessions == null || chatSessions.Count == 0)
+            {
+                Console.WriteLine("NO SESSIONS LOADED: NULL OR EMPTY");
+            }
+            else
+            {
+                foreach (var session in chatSessions)
+                {
+                    ChatSessionButton newChat = new ChatSessionButton(session.SessionID, session.CreatedAt, CurrentAppSettings, this.pcName, this.IPaddress, this.Ports, this.connectedClients);
+                    newChat.InitializeButton();
+                    Messages_Panel.Controls.Add(newChat.GetButton());
+                }
+            }
+        }
 
         private Settings Initialise_settings()
         {
@@ -307,12 +327,15 @@ namespace Aegis
 
         private void Session_Joiner_Click(object sender, EventArgs e)
         {
+            TcpClient newClient = new TcpClient();
+
             Screen currentScreen = Screen.FromControl(Session_Joiner);
-            DataInput dataInput = new DataInput(pcName, this, Ports, CurrentAppSettings, IPaddress);
+            DataInput dataInput = new DataInput(pcName, this, Ports, CurrentAppSettings, IPaddress, newClient);
 
             dataInput.StartPosition = FormStartPosition.Manual;
             dataInput.Location = currentScreen.WorkingArea.Location;
 
+            //this.connectedClients[dataInput.TargetSession] = newClient;   moved into the data input
 
             dataInput.Show();
         }
@@ -335,8 +358,9 @@ namespace Aegis
         private string UserID;
         private string IPaddress;
         private List<int> Ports;
+        private Dictionary<string, TcpClient> connectedClient;
 
-        public ChatSessionButton(string sessionID, string createdAt,Settings settings, string UserID, string IPaddress, List<int> Ports)
+        public ChatSessionButton(string sessionID, string createdAt,Settings settings, string UserID, string IPaddress, List<int> Ports, Dictionary<string, TcpClient> connectedClient)
         {
             // initalise the button styling 
             this.sessionID = sessionID;
@@ -345,6 +369,8 @@ namespace Aegis
             this.UserID = UserID;
             this.Ports = Ports;
             this.IPaddress = IPaddress;
+            this.connectedClient = connectedClient;
+
             InitializeButton();
         }
 
@@ -362,7 +388,10 @@ namespace Aegis
         public void OpenSessionForm()
         {
             Screen currentScreen = Screen.FromControl(sessionButton);
-            Message_Window sessionForm = new Message_Window(sessionID, UserID, IPaddress, Ports, appSettings);
+
+            TcpClient newClient = new TcpClient();
+
+            Message_Window sessionForm = new Message_Window(sessionID, UserID, IPaddress, Ports, appSettings, this.connectedClient, newClient);
 
             // Check the theme in the settings and apply the appropriate colors
             if (appSettings.Theme == "Dark")

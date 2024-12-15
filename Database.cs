@@ -70,7 +70,6 @@ namespace LocalDatabaseApp
                         Direction TEXT CHECK(Direction IN ('sent', 'received')) NOT NULL,
                         SentAt TIMESTAMP DEFAULT (datetime(CURRENT_TIMESTAMP, 'localtime')),
                         FOREIGN KEY (SessionID) REFERENCES Sessions(SessionID) ON DELETE CASCADE,
-                        FOREIGN KEY (UserID) REFERENCES Users(UserName)
                     );
                     CREATE TABLE IF NOT EXISTS Files (
                         FileID INTEGER PRIMARY KEY AUTOINCREMENT,

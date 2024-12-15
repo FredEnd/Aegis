@@ -12,21 +12,26 @@ using System.Windows.Forms;
 using System.Xml.Linq;
 using Aegis_main;
 using LocalDatabaseApp;
+using static Aegis.Message_Window;
+using static Aegis_main.Mains;
 
 namespace Aegis
 {
     public partial class DataInput : Form
     {
         private string UserID;
-        private string TargetSession;
+        public string TargetSession;
         private int TargetPort;
+        private string TargetHost;
+        private string TargetEncryption;
         private Home_Page Home_Page;
         private Settings Settings;
         private List<int> Ports;
         private string UserIP;
+        private TcpClient tcpClient;
 
 
-        public DataInput(string UserID, Home_Page home_page, List<int> Ports, Settings CurrentAppSettings, string UserIP)
+        public DataInput(string UserID, Home_Page home_page, List<int> Ports, Settings CurrentAppSettings, string UserIP, TcpClient tcpClient)
         {
             this.UserID = UserID;
 
@@ -34,11 +39,12 @@ namespace Aegis
             this.Settings = CurrentAppSettings;
             this.Ports = Ports;
             this.UserIP = UserIP;
+            this.tcpClient = tcpClient;
 
             InitializeComponent();
         }
 
-        private async void EnterButton_Click(object sender, EventArgs e)
+        private async void EnterButton_ClickAsync(object sender, EventArgs e)
         {
             var input = EnterBox.Text;
             var SessionInfo = Mains.InfoFromSessionCode(input);
@@ -46,7 +52,16 @@ namespace Aegis
             string TargetIP = SessionInfo.ipAddress;
             this.TargetPort = SessionInfo.port;
             this.TargetSession = SessionInfo.sessionID;
+            this.TargetHost = SessionInfo.host;
+            this.TargetEncryption = SessionInfo.encryption;
 
+            string sessionData = await RequestSessionDataAsync(TargetIP, TargetPort, TargetSession);
+
+            DB.Create_Session(TargetSession, TargetHost, TargetEncryption, TargetPort);
+            this.Home_Page.Refresh_Sessions();
+
+            this.Close();
+            /*
             string sessionData = await RequestSessionDataAsync(TargetIP, TargetPort, TargetSession);
 
             HandleResponse(sessionData);
@@ -59,7 +74,7 @@ namespace Aegis
             {
                 MessageBox.Show("Failed to retrieve session data.");
             }
-            
+            */
         }
 
         private void Cancel_Click(object sender, EventArgs e)
@@ -72,40 +87,51 @@ namespace Aegis
         {
             try
             {
-                using (TcpClient client = new TcpClient())
+                if (!tcpClient.Connected)
                 {
-                    // Attempt to connect to the server
-                    await client.ConnectAsync(ip, port);
+                    await tcpClient.ConnectAsync(ip, port);
                     Console.WriteLine($"Connected to server {ip}:{port}");
-
-                    using (NetworkStream stream = client.GetStream())
-                    {
-                        // Create a request message for the session data
-                        string request = $"GET_SESSION_INFO:{sessionID} | USERID: {UserID}";
-                        byte[] requestBytes = Encoding.UTF32.GetBytes(request);
-
-                        // Send the request to the server
-                        await stream.WriteAsync(requestBytes, 0, requestBytes.Length);
-                        Console.WriteLine("Request sent for session data.");
-
-                        // Wait for the server's response
-                        byte[] responseBuffer = new byte[4096];
-                        int bytesRead = await stream.ReadAsync(responseBuffer, 0, responseBuffer.Length);
-
-                        if (bytesRead > 0)
-                        {
-                            // Convert the response to a string
-                            string response = Encoding.UTF32.GetString(responseBuffer, 0, bytesRead);
-                            Console.WriteLine($"Response received: {response}");
-                            return response;
-                        }
-                        else
-                        {
-                            Console.WriteLine("No data received from server.");
-                            return null;
-                        }
-                    }
                 }
+
+                NetworkStream stream = tcpClient.GetStream();
+
+                // Create a request message for the session data
+                string request =  $"USERID:testUser|TestMessage";
+                byte[] requestBytes = Encoding.UTF32.GetBytes(request);
+
+                // Send the request to the server
+                await stream.WriteAsync(requestBytes, 0, requestBytes.Length);
+                Console.WriteLine("Request sent for session data.");
+
+                // Wait for the server's response
+                byte[] responseBuffer = new byte[4096];
+                int bytesRead = await stream.ReadAsync(responseBuffer, 0, responseBuffer.Length);
+
+                if (bytesRead > 0)
+                {
+                    // Convert the response to a string
+                    string response = Encoding.UTF32.GetString(responseBuffer, 0, bytesRead);
+                    Console.WriteLine($"Response received: {response}");
+
+                    // Safely add to connected clients
+                    if (this.Home_Page != null)
+                    {
+                        this.Home_Page.connectedClients.Add(sessionID, tcpClient);
+                        Console.WriteLine("Client added to Home_Page.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("Home_Page instance is null.");
+                    }
+
+                    return response;
+                }
+                else
+                {
+                    Console.WriteLine("No data received from server.");
+                    return null;
+                }
+                
             }
             catch (SocketException ex)
             {
@@ -116,6 +142,11 @@ namespace Aegis
             {
                 Console.WriteLine($"Error: {ex.Message}");
                 return null;
+            }
+            finally
+            {
+                tcpClient.Close();
+                this.Close();
             }
         }
 
@@ -168,22 +199,7 @@ namespace Aegis
 
         public void Refresh_Sessions()
         {
-            Home_Page.Messages_Panel.Controls.Clear();
-
-            var chatSessions = DB.LoadChatSessions();
-            if (chatSessions == null || chatSessions.Count == 0)
-            {
-                Console.WriteLine("NO SESSIONS LOADED: NULL OR EMPTY");
-            }
-            else
-            {
-                foreach (var session in chatSessions)
-                {
-                    ChatSessionButton newChat = new ChatSessionButton(session.SessionID, session.CreatedAt, Settings, UserID , UserIP, Ports);
-                    newChat.InitializeButton();
-                    Home_Page.Messages_Panel.Controls.Add(newChat.GetButton());
-                }
-            }
+            this.Home_Page.Refresh_Sessions();
         }
     }
 }

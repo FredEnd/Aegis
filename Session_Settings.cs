@@ -63,22 +63,7 @@ namespace Aegis
 
         public void Refresh_Sessions()
         {
-            Home_Page.Messages_Panel.Controls.Clear();
-
-            var chatSessions = DB.LoadChatSessions();
-            if (chatSessions == null || chatSessions.Count == 0)
-            {
-                Console.WriteLine("NO SESSIONS LOADED: NULL OR EMPTY");
-            }
-            else
-            {
-                foreach (var session in chatSessions)
-                {
-                    ChatSessionButton newChat = new ChatSessionButton(session.SessionID, session.CreatedAt, Settings, pcName, IPaddress, Ports);
-                    newChat.InitializeButton();
-                    Home_Page.Messages_Panel.Controls.Add(newChat.GetButton());
-                }
-            }   
+            Home_Page.Refresh_Sessions();
         }
 
         private void Create_Session_Click(object sender, EventArgs e)
