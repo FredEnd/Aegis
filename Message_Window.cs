@@ -46,13 +46,13 @@ namespace Aegis
 
         //new method variables
         public Dictionary<string, TcpClient> connectedClients = new Dictionary<string, TcpClient>();
-        private TcpClient TcpClient;
+        private TcpClient TcpClient = null;
 
         private string recipientUserID = null;
 
 
 
-        public Message_Window(string sessionId, string UserID, string IPaddress, List<int> Ports, Settings Appsettings, Dictionary<string, TcpClient> connectedClients, TcpClient client)
+        public Message_Window(string sessionId, string UserID, string IPaddress, List<int> Ports, Settings Appsettings, Dictionary<string, TcpClient> connectedClients)
         {
             List<(string HostUserID, string Encryption, int portNum)> sessionSettings = DB.LoadSessionSettings(sessionId);
 
@@ -63,7 +63,6 @@ namespace Aegis
             this.AppSettings = Appsettings;
             this.IPaddress = IPaddress;
             this.EncryptionType = setting.Encryption;
-            this.TcpClient = client; 
 
             if (UserID != setting.HostUserID)
             {
@@ -86,7 +85,7 @@ namespace Aegis
             }
 
             this.FormClosing += Message_Window_FormClosing;
-        }
+        } //Initalise the Message window and construct the elements and if it is a host cleint or a client client...
 
         //-------------------------------------------------------------------------------------------------
 
@@ -95,7 +94,8 @@ namespace Aegis
             try
             {
                 Console.WriteLine("Client version");
-                Console.WriteLine("Handled by the send message function");
+
+                Console.WriteLine($"{ipAddress}, {port}");
 
                 List<(string HostUserID, string Encryption, int portNum)> sessionSettings = DB.LoadSessionSettings(sessionId);
 
@@ -107,64 +107,59 @@ namespace Aegis
 
                 var setting = sessionSettings[0];
 
-                try
+                if (this.TcpClient == null || !this.TcpClient.Connected)
                 {
-                    if (!TcpClient.Connected)
+                    try
                     {
+                        TcpClient Client = new TcpClient();
+
+                        this.TcpClient = Client;
+                        Console.WriteLine($"Attempting to connect to server {ipAddress}:{port}");
                         await TcpClient.ConnectAsync(ipAddress, port);
                         Console.WriteLine($"Connected to server {ipAddress}:{port}");
                     }
-
-                    NetworkStream stream = TcpClient.GetStream();
-
-                    // Create a request message for the session data
-                    string request = $"GET_SESSION_INFO: | USERID: ";
-                    byte[] requestBytes = Encoding.UTF32.GetBytes(request);
-
-                    // Send the request to the server
-                    await stream.WriteAsync(requestBytes, 0, requestBytes.Length);
-                    Console.WriteLine("Request sent for session data.");
-
-                    // Wait for the server's response
-                    byte[] responseBuffer = new byte[4096];
-                    int bytesRead = await stream.ReadAsync(responseBuffer, 0, responseBuffer.Length);
-
-                    if (bytesRead > 0)
+                    catch (SocketException ex)
                     {
-                        // Convert the response to a string
-                        string response = Encoding.UTF32.GetString(responseBuffer, 0, bytesRead);
-                        Console.WriteLine($"Response received: {response}");
+                        Console.WriteLine($"Socket error during connection: {ex.Message}");
+                        return;
                     }
-                    else
-                    {
-                        Console.WriteLine("No data received from server.");
-
-                    }
-
                 }
-                catch (SocketException ex)
+
+                NetworkStream stream = TcpClient.GetStream();
+
+                // Send a request message
+                string request = $"GET_SESSION_INFO: | USERID: ";
+                byte[] requestBytes = Encoding.UTF32.GetBytes(request);
+                await stream.WriteAsync(requestBytes, 0, requestBytes.Length);
+                Console.WriteLine("Request sent for session data.");
+
+                // Receive a response
+                byte[] responseBuffer = new byte[4096];
+                int bytesRead = await stream.ReadAsync(responseBuffer, 0, responseBuffer.Length);
+                if (bytesRead > 0)
                 {
-                    Console.WriteLine($"Socket error: {ex.Message}");
-
+                    string response = Encoding.UTF32.GetString(responseBuffer, 0, bytesRead);
+                    Console.WriteLine($"Response received: {response}");
                 }
-                catch (Exception ex)
+                else
                 {
-                    Console.WriteLine($"Error: {ex.Message}");
+                    Console.WriteLine("No data received from server.");
                 }
-                finally
-                {
-                    TcpClient.Close();
-                    this.Close();
-                }
-
-
-                Console.WriteLine($"TcpClient initialized: {TcpClient}");
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"Error in InitializeMessageWindowClientAsync: {ex.Message}");
             }
-        }
+            finally
+            {
+                if (TcpClient != null)
+                {
+                    TcpClient.Close();
+                    Console.WriteLine("TcpClient closed.");
+                }
+            }
+        } //Tries to make the ocnnection Logic is sound and it should work, however it is highly depended on the Network settings and the handling for your network settingss, if you want to establish a connection you will need to configue your network such that it will work.
+
 
 
         private async Task sendMessageToListener(string message, TcpClient client)
@@ -208,7 +203,7 @@ namespace Aegis
                 // Handle other types of errors
                 Console.WriteLine($"Unexpected error: {ex.Message}");
             }
-        }
+        } //Sends a message from the Client Client to the Host Client
 
 
 
@@ -320,7 +315,7 @@ namespace Aegis
             {
                 Console.WriteLine("Listener function final call");
             }
-        }
+        } //Starts up the host connection see the comment on the client to find out about the network, however the logic on this is also sound and will work, it just needs adjusting for the network it is on and given propper permissons.
 
 
         private void HandleIncomingMessage(string message, TcpClient client, NetworkStream stream)
@@ -348,7 +343,7 @@ namespace Aegis
             {
                 Console.WriteLine($"Error processing message: {ex.Message}");
             }
-        }
+        } //host handles the incomming message
 
 
         private void StopServer()
@@ -374,7 +369,7 @@ namespace Aegis
             {
                 Console.WriteLine($"Error stopping server: {ex.Message}");
             }
-        }
+        } //Stops the host listeneing
 
         private async Task StartListenerAsync(int port)
         {
@@ -420,7 +415,7 @@ namespace Aegis
             }
 
 
-        }
+        } //Old start listener function
 
         private async Task HandleClientAsync(TcpClient client)
         {
@@ -464,7 +459,7 @@ namespace Aegis
                 connectedClients.Remove(clientId);
                 Console.WriteLine($"Client {clientId} disconnected.");
             }
-        }
+        } //Handle the Client connection
 
 
         //-------------------------------------------------------------------------------------------------
@@ -612,7 +607,7 @@ namespace Aegis
 
                         foreach (var message in chatData)
                         {
-                            var messageInstance = new Message(CUserID, message.Direction, message.MessageContent, message.SentAt);
+                            var messageInstance = new Message(message.UserID, message.Direction, message.MessageContent, message.SentAt);
                             var messagePanel = messageInstance.CreateMessagePanel();
 
                             messagePanel.AutoSize = true;
@@ -647,7 +642,7 @@ namespace Aegis
             {
                 client.Close();
             }
-        }
+        } //Preocesses the prefixes from a message
 
 
         // RSA Decryption Logic
@@ -660,7 +655,7 @@ namespace Aegis
                 byte[] decryptedBytes = rsa.Decrypt(encryptedBytes, RSAEncryptionPadding.Pkcs1);
                 return Encoding.UTF32.GetString(decryptedBytes);
             }
-        }
+        } //unused decrypt function that isnt used because it was used for itinial testing
 
         public static RSAParameters Base64ToRSAParameters(string base64String)
         {
@@ -688,6 +683,8 @@ namespace Aegis
             }
         }
 
+        //all RSA functions above are for converting RSA parameters into base 64 stings and bacl.
+
 
 
 
@@ -710,7 +707,7 @@ namespace Aegis
                     StopServer();
                 }
             }
-        }
+        } //Handles the form closing differently to the main one.
 
         private async Task StartUpMessages()
         {
@@ -746,7 +743,7 @@ namespace Aegis
                     }
                 }
             }
-        }
+        } //loads up the starting saved messages for this form
 
         public class Message
         {
@@ -817,7 +814,7 @@ namespace Aegis
                 return messagePanel;
             }
 
-        }
+        } //Message instance.
 
         //-------------------------------------------------------------------------------------------------
 
@@ -831,12 +828,12 @@ namespace Aegis
             emojiPanelForm.Show();
 
             Console.WriteLine("EmojiBox Shown");
-        }
+        } //Loads up the emoji button
 
         private void File_Upload_Button_Click(object sender, EventArgs e)
         {
 
-        }
+        } //Not inplemented ran out of time and probrably wont be able to test without relyable TCP connection which requires a properly set up network which i also didnt have time for.
 
         private bool IsConnectionEstablished()
         {
@@ -848,7 +845,7 @@ namespace Aegis
             {
                 return CurrentStreamC != null && CurrentStreamC.CanWrite;
             }
-        }
+        } //Old connection established function
 
         private async void Send_button_Click(object sender, EventArgs e)
         {
@@ -912,6 +909,7 @@ namespace Aegis
                 }
             }
 
+            // For client
             if (HUserID != CUserID)
             {
                 (RSAParameters publicKey, RSAParameters privateKey) = Mains.GenerateRSAKeyPair();
@@ -964,7 +962,7 @@ namespace Aegis
 
                 foreach (var message in chatData)
                 {
-                    var messageInstance = new Message(CUserID, message.Direction, message.MessageContent, message.SentAt);
+                    var messageInstance = new Message(message.UserID, message.Direction, message.MessageContent, message.SentAt);
                     var messagePanel = messageInstance.CreateMessagePanel();
 
                     messagePanel.AutoSize = true;
@@ -984,7 +982,7 @@ namespace Aegis
                     }
                 }
             }
-        }
+        } //Handles the client or host clients sending a message to the other.
     }
 }
 

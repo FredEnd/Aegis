@@ -88,7 +88,7 @@ namespace Aegis
             }
 
 
-        }
+        } //Creates a new dialgoue to decide if the application will open in local or public mode and then runs the loading form
 
         public async Task WaitAndOpenHome()
         {
@@ -130,7 +130,7 @@ namespace Aegis
             homePage.StartPosition = FormStartPosition.Manual;
             homePage.Location = currentScreen.WorkingArea.Location;
             homePage.Show();
-        }
+        } //opens a loading form which runs the port scanners to find open ports to message on
 
     }
 }

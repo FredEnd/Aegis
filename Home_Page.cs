@@ -58,7 +58,7 @@ namespace Aegis
                     }
                 }
             }
-        }
+        } // Initiates the homepage loading the sessions and the settings.
 
         public void Refresh_Sessions()
         {
@@ -78,7 +78,7 @@ namespace Aegis
                     Messages_Panel.Controls.Add(newChat.GetButton());
                 }
             }
-        }
+        }  //Refreshes the sessions
 
         private Settings Initialise_settings()
         {
@@ -241,7 +241,7 @@ namespace Aegis
             settingsPanel.Controls.Add(notificationsToggle);
 
             return appSettings;
-        }
+        } //Collects the data from the settings and applys them
 
         private bool deleteDBConfirmation()
         {
@@ -250,9 +250,8 @@ namespace Aegis
                 var result = confirmationDialog.ShowDialog();
                 return confirmationDialog.UserConfirmed; 
             }
-        }
+        } //Loads a confirmation to delete a database
 
-        // method to apply the theme to my application 
         private void ApplyThemeHomePage(string theme)
         {
             // Implement theme application logic here
@@ -272,7 +271,7 @@ namespace Aegis
                 Messages_Label.BackColor = System.Drawing.SystemColors.ControlLight;
                 Messages_Panel.BackColor = System.Drawing.SystemColors.ControlLight;
             }
-        }
+        } //Apply theme button
 
         private void ApplyFontSize(int fontSize)
         {
@@ -280,7 +279,7 @@ namespace Aegis
             {
                 control.Font = new Font(control.Font.FontFamily, fontSize);
             }
-        }
+        } //Apply font size button
 
         private void ApplyFontSizeOtherForms(Control control, int fontSize)
         {
@@ -293,7 +292,7 @@ namespace Aegis
             {
                 ApplyFontSize(fontSize);
             }
-        }
+        } //Font size to other forms button
 
         private void Session_maker_Click(object sender, EventArgs e)
         {
@@ -323,9 +322,9 @@ namespace Aegis
             NewSessionSettings.StartPosition = FormStartPosition.Manual;
             NewSessionSettings.Location = currentScreen.WorkingArea.Location;
             NewSessionSettings.Show();
-        }
+        } //Button to make a session
 
-        private void Session_Joiner_Click(object sender, EventArgs e)
+        private void Session_Joiner_Click(object sender, EventArgs e) //Button to open a data input session to join a chat session
         {
             TcpClient newClient = new TcpClient();
 
@@ -341,12 +340,12 @@ namespace Aegis
         }
     }
 
-    public class Settings
+    public class Settings 
     {
         public string Theme { get; set; } = "Dark";
         public int FontSize { get; set; } = 8;
         public bool NotificationsEnabled { get; set; } = true;
-    }
+    } //Holds the settings for the application
 
     public class ChatSessionButton
     {
@@ -360,7 +359,7 @@ namespace Aegis
         private List<int> Ports;
         private Dictionary<string, TcpClient> connectedClient;
 
-        public ChatSessionButton(string sessionID, string createdAt,Settings settings, string UserID, string IPaddress, List<int> Ports, Dictionary<string, TcpClient> connectedClient)
+        public ChatSessionButton(string sessionID, string createdAt,Settings settings, string UserID, string IPaddress, List<int> Ports, Dictionary<string, TcpClient> connectedClient) 
         {
             // initalise the button styling 
             this.sessionID = sessionID;
@@ -372,7 +371,7 @@ namespace Aegis
             this.connectedClient = connectedClient;
 
             InitializeButton();
-        }
+        } //Initalises the chat session button.
 
         public void InitializeButton()
         {
@@ -383,15 +382,13 @@ namespace Aegis
             sessionButton.Margin = new Padding(10);
             sessionButton.Dock = DockStyle.Top;
             sessionButton.Click += (sender, e) => OpenSessionForm();
-        }
+        } //for each session it makes a session
 
         public void OpenSessionForm()
         {
             Screen currentScreen = Screen.FromControl(sessionButton);
 
-            TcpClient newClient = new TcpClient();
-
-            Message_Window sessionForm = new Message_Window(sessionID, UserID, IPaddress, Ports, appSettings, this.connectedClient, newClient);
+            Message_Window sessionForm = new Message_Window(sessionID, UserID, IPaddress, Ports, appSettings, this.connectedClient);
 
             // Check the theme in the settings and apply the appropriate colors
             if (appSettings.Theme == "Dark")
@@ -418,7 +415,7 @@ namespace Aegis
             sessionForm.StartPosition = FormStartPosition.Manual;
             sessionForm.Location = currentScreen.WorkingArea.Location;
             sessionForm.Show();
-        }
+        } //when you want to open a chat session
 
         private void ApplyFontSize(Control control, int fontSize)
         {
@@ -431,12 +428,12 @@ namespace Aegis
             {
                 ApplyFontSize(ControlElements, fontSize);  
             }
-        }
+        } //applys the font size to all elements inside of that session
 
         public Button GetButton()
         {
             return sessionButton;
-        }
+        } //Sends the button back to be put into the hompage form
     }
 
     public class Session
@@ -446,7 +443,7 @@ namespace Aegis
         private string Encryption {  get; set; }
         private int portNum { get; set; }
 
-        public Session(string sessionId, string hostUserId, string encryptionType, int portNum = 0)
+        public Session(string sessionId, string hostUserId, string encryptionType, int portNum = 0) // calls the session information.
         {
             this.SessionID = sessionId;
             this.HostUserID = hostUserId;
@@ -459,6 +456,6 @@ namespace Aegis
         public void Add_Session()
         {
             DB.Create_Session(SessionID, HostUserID, Encryption, portNum);
-        }
+        } // adds a session to the DB
     }
 }

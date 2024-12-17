@@ -19,7 +19,6 @@ namespace YourNamespace
             this.Close(); 
         }
 
-        // Event handler for the No button
         private void button2_Click(object sender, EventArgs e)
         {
             UserConfirmed = false; 

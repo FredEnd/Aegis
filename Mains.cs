@@ -33,7 +33,7 @@ namespace Aegis_main
                 Console.WriteLine("Unable to get public IP: " + ex.Message);
                 return "null";
             }
-        }
+        } //Gets the public IP if it is a public connection
 
         public static string GetLocalIPAddress()
         {
@@ -46,13 +46,13 @@ namespace Aegis_main
                 }
             }
             throw new Exception("No network adapters with an IPv4 address in the system!");
-        }
+        } //Gets the local IP if it is a local connection
 
         public static void Forms_FormClosing(object sender, FormClosingEventArgs e)
         {
             // Exit the entire application when this form is closed
             Application.Exit();
-        }
+        } //Handles when the form is closing
 
         public static async void play_notifercation()
         {
@@ -77,16 +77,16 @@ namespace Aegis_main
                     }
                 }
             });
-        }
+        } //Plays the notifercation at the start or if the host or  client recieves a message.
 
         public enum EncryptionType
         {
             AES,
             RSA,
             DES
-        }
+        } //Used to hold all of the encryption types
 
-        public static Task<List<int>> TestLocalPortsAsync(string localIpAddress, int startPort, int endPort)
+        public static Task<List<int>> TestLocalPortsAsync(string localIpAddress, int startPort, int endPort) 
         {
             var availablePorts = new List<int>();
             object lockObj = new object();
@@ -123,9 +123,7 @@ namespace Aegis_main
                 }
             }
             return Task.FromResult(availablePorts);
-        }
-
-
+        } //Port scanner form the Local connection
 
         public static async Task<List<int>> TestPortsAsync(string ipAddress, int startPort, int endPort, int timeout = 100)
         {
@@ -179,7 +177,7 @@ namespace Aegis_main
             await Task.WhenAll(tasks);
 
             return openPorts;
-        }
+        } //Port Scannner for the Public connection (comes up as malware when compiled...)
 
 
 
@@ -200,7 +198,7 @@ namespace Aegis_main
             }
 
             return $"{ipAddress}/{port}/{sessionID}/{host}/{encryption}";
-        }
+        } //Generates a session code for the host to give to the clients.
 
 
         public static (string ipAddress, int port, string sessionID, string host, string encryption) InfoFromSessionCode(string sessionCode)
@@ -258,7 +256,7 @@ namespace Aegis_main
             }
 
             return (ipAddress, port, sessionID, host, encryption);
-        }
+        } //Splits up the ssession code and returns it back to its original data.
 
 
 
@@ -278,7 +276,7 @@ namespace Aegis_main
                 Console.WriteLine($"Server error: {ex.Message}");
                 return null;
             }
-        }
+        } //Old accept client function
 
 
         public static async Task<(string ReceivedMessage, NetworkStream Stream)> HandleClientAsync(TcpClient client)
@@ -303,7 +301,7 @@ namespace Aegis_main
                 Console.WriteLine($"Error handling client: {ex.Message}");
             }
             return (null, null);
-        }
+        } //Handle client function
 
 
 
@@ -327,7 +325,7 @@ namespace Aegis_main
                 Console.WriteLine($"Error connecting to peer: {ex.Message}");
             }
             return (client, stream);
-        }
+        } //Old Client connection function
 
         private static async Task ListenForMessagesAsync(NetworkStream stream)
         {
@@ -353,12 +351,13 @@ namespace Aegis_main
             {
                 Console.WriteLine($"Error while listening for messages: {ex.Message}");
             }
-        }
+        } //listen for messages reference 
 
 
         //-------------------------------------------------------------------------------------------------
 
         // encrypts string for transport via TCP
+
         public static (List<string> EncryptedDataChunks, string EncryptedKey, string IV) EncryptDataWithKeyTransport(
             string data,
             string encryptionType,
@@ -376,13 +375,16 @@ namespace Aegis_main
                 byte[] symmetricKey = GenerateRandomKey(32);
                 byte[] iv = GenerateRandomKey(16);
 
-                List<string> encryptedDataChunks = EncryptDataInChunks(data, encryptionType, symmetricKey, iv, chunkSize);
+                byte[] key = PrepareKey(encryptionType, symmetricKey);
+                byte[] fixediv =PrepareIV(encryptionType, iv);
 
-                byte[] encryptedKey = EncryptSymmetricKeyWithRSA(symmetricKey, receiverPublicKey);
+                List<string> encryptedDataChunks = EncryptDataInChunks(data, encryptionType, key, fixediv, chunkSize);
+
+                byte[] encryptedKey = EncryptSymmetricKeyWithRSA(key, receiverPublicKey);
 
                 if (iv != null)
                 {
-                    string responseIV = Convert.ToBase64String(iv);
+                    string responseIV = Convert.ToBase64String(fixediv);
                     return (encryptedDataChunks, Convert.ToBase64String(encryptedKey), responseIV);
                 }
                 else
@@ -390,10 +392,8 @@ namespace Aegis_main
                     return (encryptedDataChunks, Convert.ToBase64String(encryptedKey), null);
                 }
             }
-        }
+        } // Takes the data and encryption type and encrypts it into the selected encryption
 
-
-        //Encrypts UTF 32 data chunks into the designated encryption type returns string of data.
         public static List<string> EncryptDataInChunks(string data, string encryptionType, byte[] symmetricKey, byte[] iv, int chunkSize = 1024)
         {
             List<string> encryptedChunks = new List<string>();
@@ -412,9 +412,8 @@ namespace Aegis_main
             }
 
             return encryptedChunks;
-        }
+        } //Encrypts UTF 32 data chunks into the designated encryption type returns string of data.
 
-        // RSA
         private static List<string> EncryptDataInChunksWithRSA(string data, RSAParameters publicKey, int chunkSize)
         {
             List<string> encryptedChunks = new List<string>();
@@ -433,9 +432,8 @@ namespace Aegis_main
             }
 
             return encryptedChunks;
-        }
+        } //Encrypts chunks into RSA
 
-        // IV encryption selections
         private static byte[] EncryptChunk(byte[] chunk, string encryptionType, byte[] key, byte[] iv)
         {
             switch (encryptionType.ToUpper()) // Convert to uppercase for consistency
@@ -443,13 +441,13 @@ namespace Aegis_main
                 case "AES":
                     return EncryptWithAES(chunk, key, iv);
                 case "DES":
+
                     return EncryptWithDES(chunk, key, iv);
                 default:
                     throw new ArgumentException("Unsupported encryption type for chunk encryption.");
             }
-        }
+        } // IV encryption selections
 
-        //AES
         private static byte[] EncryptWithAES(byte[] dataBytes, byte[] key, byte[] iv)
         {
             using (Aes aesAlg = Aes.Create())
@@ -466,9 +464,83 @@ namespace Aegis_main
                     return msEncrypt.ToArray();
                 }
             }
+        } //What is says on the box
+
+        private static byte[] TruncateKeyForDES(byte[] key)
+        {
+            if (key.Length > 8)
+                return key.Take(8).ToArray(); 
+            else if (key.Length < 8)
+                throw new ArgumentException("Key is too short for DES (minimum 8 bytes required).");
+            return key;
         }
 
-        //DES
+        private static byte[] AdjustKeyForAES(byte[] key, int desiredKeyLength)
+        {
+            if (key.Length > desiredKeyLength)
+                return key.Take(desiredKeyLength).ToArray(); 
+            else if (key.Length < desiredKeyLength)
+                return key.Concat(new byte[desiredKeyLength - key.Length]).ToArray(); 
+            return key;
+        }
+
+        private static byte[] PrepareKey(string encryptionType, byte[] key)
+        {
+            if (encryptionType.ToUpper() == "DES")
+            {
+                return TruncateKeyForDES(key); 
+            }
+            else if (encryptionType.ToUpper() == "AES")
+            {
+                return AdjustKeyForAES(key, 32); 
+            }
+            else
+            {
+                throw new ArgumentException($"Unsupported encryption type: {encryptionType}");
+            }
+        }
+
+        private static byte[] PrepareIV(string encryptionType, byte[] iv)
+        {
+            if (encryptionType.ToUpper() == "DES")
+            {
+                return TruncateIVForDES(iv); 
+            }
+            else if (encryptionType.ToUpper() == "AES")
+            {
+                return AdjustIVForAES(iv); 
+            }
+            else
+            {
+                throw new ArgumentException($"Unsupported encryption type: {encryptionType}");
+            }
+        }
+
+        private static byte[] TruncateIVForDES(byte[] iv)
+        {
+            if (iv.Length >= 8)
+            {
+                return iv.Take(8).ToArray(); 
+            }
+            else
+            {
+                throw new ArgumentException("IV for DES must be at least 8 bytes long.");
+            }
+        }
+
+        private static byte[] AdjustIVForAES(byte[] iv)
+        {
+            if (iv.Length >= 16)
+            {
+                return iv.Take(16).ToArray(); 
+            }
+            else
+            {
+                throw new ArgumentException("IV for AES must be at least 16 bytes long.");
+            }
+        }
+
+
         private static byte[] EncryptWithDES(byte[] dataBytes, byte[] key, byte[] iv)
         {
             using (DESCryptoServiceProvider des = new DESCryptoServiceProvider())
@@ -485,19 +557,17 @@ namespace Aegis_main
                     return msEncrypt.ToArray();
                 }
             }
-        }
+        } //What is says on the box
 
-        //RSA standard encryption
         private static byte[] EncryptWithRSA(byte[] dataBytes, RSAParameters publicKey)
         {
-            using (RSA rsa = RSA.Create())
+            using (var rsa = new RSACryptoServiceProvider())
             {
                 rsa.ImportParameters(publicKey);
-                return rsa.Encrypt(dataBytes, RSAEncryptionPadding.OaepSHA256);
+                return rsa.Encrypt(dataBytes, false);
             }
-        }
+        } //What is says on the box
 
-        //key encryption
         public static byte[] EncryptSymmetricKeyWithRSA(byte[] key, RSAParameters publicKey)
         {
             using (RSACryptoServiceProvider rsa = new RSACryptoServiceProvider())
@@ -505,10 +575,8 @@ namespace Aegis_main
                 rsa.ImportParameters(publicKey);
                 return rsa.Encrypt(key, false);
             }
-        }
+        } //Encrypts the symetric key to be sent
 
-
-        // key pair creation
         public static (RSAParameters PublicKey, RSAParameters PrivateKey) GenerateRSAKeyPair()
         {
             using (RSA rsa = RSA.Create())
@@ -516,9 +584,8 @@ namespace Aegis_main
                 rsa.KeySize = 2048;
                 return (rsa.ExportParameters(false), rsa.ExportParameters(true)); // Public and Private keys
             }
-        }
+        } // key pair creation
 
-        // random key generator
         private static byte[] GenerateRandomKey(int size)
         {
             byte[] key = new byte[size];
@@ -527,12 +594,11 @@ namespace Aegis_main
                 rng.GetBytes(key);
             }
             return key;
-        }
+        } // random key generator
 
 
         //-------------------------------------------------------------------------------------------------
 
-        // Takes the transported data and key and decrpts them
         public static string DecryptDataWithKeyTransport(
              List<string> encryptedDataChunks,
              string encryptedKey,
@@ -562,10 +628,18 @@ namespace Aegis_main
                 symmetricKey = DecryptSymmetricKeyWithRSA(Convert.FromBase64String(encryptedKey), receiverPrivateKey);
             }
 
-            string decryptedData = DecryptDataChunks(encryptedDataChunks, encryptionType, symmetricKey, iv);
-            return decryptedData;
-        }
-
+            if (encryptionType.ToUpper() == "RSA")
+            {
+                string decryptedData = DecryptDataChunksWithRSA(encryptedDataChunks, receiverPrivateKey);
+                return decryptedData;
+            }
+            else
+            {
+                string decryptedData = DecryptDataChunks(encryptedDataChunks, encryptionType, symmetricKey, iv);
+                return decryptedData;
+            }
+            
+        } // Takes the transported data and key and decrpts them
 
 
         private static string DecryptDataChunksWithRSA(List<string> encryptedChunks, RSAParameters privateKey)
@@ -580,7 +654,7 @@ namespace Aegis_main
             }
 
             return Encoding.UTF32.GetString(decryptedBytes.ToArray());
-        }
+        } //Decrypts Chunks with RSA
 
         private static string DecryptDataChunks(List<string> encryptedChunks, string encryptionType, byte[] key, byte[] iv)
         {
@@ -594,7 +668,7 @@ namespace Aegis_main
             }
 
             return Encoding.UTF32.GetString(decryptedBytes.ToArray());
-        }
+        } // Decrypts chunks selection
 
         private static byte[] DecryptChunk(byte[] encryptedChunk, string encryptionType, byte[] key, byte[] iv)
         {
@@ -607,7 +681,7 @@ namespace Aegis_main
                 default:
                     throw new ArgumentException("Unsupported encryption type for chunk decryption.");
             }
-        }
+        } //Decrypts chunk selection
 
         public static byte[] DecryptWithAES(byte[] encryptedData, byte[] key, byte[] iv)
         {
@@ -630,8 +704,7 @@ namespace Aegis_main
                     return resultStream.ToArray();
                 }
             }
-        }
-
+        } //what it says on the box
 
         public static byte[] DecryptWithDES(byte[] encryptedData, byte[] key, byte[] iv)
         {
@@ -649,16 +722,18 @@ namespace Aegis_main
                     return resultStream.ToArray();
                 }
             }
-        }
+        } //what it says on the box
 
         private static byte[] DecryptWithRSA(byte[] encryptedData, RSAParameters privateKey)
         {
-            using (RSA rsa = RSA.Create())
+            using (var rsa = new RSACryptoServiceProvider())
             {
                 rsa.ImportParameters(privateKey);
-                return rsa.Decrypt(encryptedData, RSAEncryptionPadding.OaepSHA256);
+
+                // Match PKCS#1 padding
+                return rsa.Decrypt(encryptedData, false);
             }
-        }
+        } //what it says on the box
 
         private static byte[] DecryptSymmetricKeyWithRSA(byte[] encryptedKey, RSAParameters privateKey)
         {
@@ -667,16 +742,14 @@ namespace Aegis_main
                 rsa.ImportParameters(privateKey);
                 return rsa.Decrypt(encryptedKey, false);
             }
-        }
-
-
+        } //what it says on the box
 
         public static void ExampleUsage()
         {
             var (publicKey, privateKey) = GenerateRSAKeyPair();
 
             string data = "This is a secure message.";
-            string encryptionType = "AES"; 
+            string encryptionType = "RSA"; 
 
             var (encryptedChunks, encryptedKey, iv) = EncryptDataWithKeyTransport(data, encryptionType, publicKey);
 
@@ -684,7 +757,7 @@ namespace Aegis_main
 
             Console.WriteLine($"Original Data: {data}");
             Console.WriteLine($"Decrypted Data: {decryptedData}");
-        }
+        } //Test function
     }
 }
 

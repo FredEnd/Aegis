@@ -103,7 +103,7 @@
             this.EnterButton.TabIndex = 1;
             this.EnterButton.Text = "Enter";
             this.EnterButton.UseVisualStyleBackColor = true;
-            this.EnterButton.Click += new System.EventHandler(this.EnterButton_ClickAsync);
+            this.EnterButton.Click += new System.EventHandler(this.EnterButton_Click);
             // 
             // EnterBox
             // 

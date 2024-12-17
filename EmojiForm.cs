@@ -16,9 +16,9 @@ namespace Aegis
         private FlowLayoutPanel Emoji_Panel;
         private Button PreviousButton, NextButton;
 
-        private const int EmojisPerPage = 100; // Number of emojis per page
-        private int currentPage = 0; // Current page index
-        private string[] allEmojis; // Array to hold all emojis
+        private const int EmojisPerPage = 100; // number of emojis per page
+        private int currentPage = 0; // current page index
+        private string[] allEmojis; // array to hold all emojis
 
         public EmojiForm(TextBox Input_Box)
         {
@@ -71,7 +71,7 @@ namespace Aegis
             };
             NextButton.Click += NextButton_Click;
             navigationPanel.Controls.Add(NextButton);
-        }
+        } //Makes the structural elements for the emojis to be put onto
 
         private void LoadEmojis()
         {
@@ -124,7 +124,7 @@ namespace Aegis
             "🇸🇾", "🇹🇼", "🇹🇯", "🇹🇿", "🇹🇭", "🇹🇱", "🇹🇬", "🇹🇰", "🇹🇴", "🇹🇹", "🇹🇳", "🇹🇷", "🇹🇲", "🇹🇻", "🇺🇬", "🇺🇦",
             "🇦🇪", "🇬🇧", "🇺🇸", "🇺🇾", "🇺🇿", "🇻🇺", "🇻🇦", "🇻🇪", "🇻🇳", "🇾🇪", "🇿🇲", "🇿🇼"
             };
-        }
+        } //A array holding all of the emojis the user could use.
 
         private void ShowEmojisForPage()
         {
@@ -148,13 +148,13 @@ namespace Aegis
             }
 
             UpdateNavigationButtons();
-        }
+        } //Shows a select number of emojis per page.
 
         private void UpdateNavigationButtons()
         {
             PreviousButton.Enabled = currentPage > 0;
             NextButton.Enabled = (currentPage + 1) * EmojisPerPage < allEmojis.Length;
-        }
+        } // Updates the currentPage
 
         private void PreviousButton_Click(object sender, EventArgs e)
         {
@@ -163,7 +163,7 @@ namespace Aegis
                 currentPage--;
                 ShowEmojisForPage();
             }
-        }
+        } //Previous page
 
         private void NextButton_Click(object sender, EventArgs e)
         {
@@ -172,7 +172,7 @@ namespace Aegis
                 currentPage++;
                 ShowEmojisForPage();
             }
-        }
+        } //Next page
 
         private void EmojiButton_Click(object sender, EventArgs e)
         {
@@ -181,6 +181,6 @@ namespace Aegis
                 this.Input_Box.Text += button.Text;
                 this.Close();
             }
-        }
+        } //Inputs the emoji into the text box.
     }
 }

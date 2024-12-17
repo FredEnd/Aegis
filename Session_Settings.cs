@@ -22,7 +22,7 @@ namespace Aegis
         public Settings Settings;
 
 
-        public Session_Settings(List<int> Ports, string IPaddress, string pcName, Home_Page home_page, Settings CurrentAppSettings)
+        public Session_Settings(List<int> Ports, string IPaddress, string pcName, Home_Page home_page, Settings CurrentAppSettings) //Initiates the form and compiles the data that is offered to the user to make a session
         {
             InitializeComponent();
 
@@ -59,12 +59,12 @@ namespace Aegis
             "AES",
             "RSA",
             "DES"
-        };
+        }; //Stores the encryption Algorithms
 
         public void Refresh_Sessions()
         {
             Home_Page.Refresh_Sessions();
-        }
+        } //Refreshes the homepage form sessions
 
         private void Create_Session_Click(object sender, EventArgs e)
         {
@@ -99,6 +99,6 @@ namespace Aegis
 
             this.Close();
 
-        }
+        } //takes the data from the text box and the comboboxes and creates a new session
     }
 }

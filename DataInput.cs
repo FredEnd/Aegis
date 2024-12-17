@@ -42,9 +42,9 @@ namespace Aegis
             this.tcpClient = tcpClient;
 
             InitializeComponent();
-        }
+        } //Object initiation for this form takes the relevent information for it to work.
 
-        private async void EnterButton_ClickAsync(object sender, EventArgs e)
+        private void EnterButton_Click(object sender, EventArgs e)
         {
             var input = EnterBox.Text;
             var SessionInfo = Mains.InfoFromSessionCode(input);
@@ -55,7 +55,7 @@ namespace Aegis
             this.TargetHost = SessionInfo.host;
             this.TargetEncryption = SessionInfo.encryption;
 
-            string sessionData = await RequestSessionDataAsync(TargetIP, TargetPort, TargetSession);
+            //string sessionData = await RequestSessionDataAsync(TargetIP, TargetPort, TargetSession);
 
             DB.Create_Session(TargetSession, TargetHost, TargetEncryption, TargetPort);
             this.Home_Page.Refresh_Sessions();
@@ -75,13 +75,13 @@ namespace Aegis
                 MessageBox.Show("Failed to retrieve session data.");
             }
             */
-        }
+        } //When the user inputs a code it will break it apart and take out the needed info to carry out the function.
 
         private void Cancel_Click(object sender, EventArgs e)
         {
             EnterBox.Text = string.Empty;
             this.Close();
-        }
+        } //If the user cancles on this action it will shut the form
 
         private async Task<string> RequestSessionDataAsync(string ip, int port, string sessionID)
         {
@@ -95,25 +95,25 @@ namespace Aegis
 
                 NetworkStream stream = tcpClient.GetStream();
 
-                // Create a request message for the session data
+                // create a request message for the session data
                 string request =  $"USERID:testUser|TestMessage";
                 byte[] requestBytes = Encoding.UTF32.GetBytes(request);
 
-                // Send the request to the server
+                // send the request to the server
                 await stream.WriteAsync(requestBytes, 0, requestBytes.Length);
                 Console.WriteLine("Request sent for session data.");
 
-                // Wait for the server's response
+                // wait for the server's response
                 byte[] responseBuffer = new byte[4096];
                 int bytesRead = await stream.ReadAsync(responseBuffer, 0, responseBuffer.Length);
 
                 if (bytesRead > 0)
                 {
-                    // Convert the response to a string
+                    // convert the response to a string
                     string response = Encoding.UTF32.GetString(responseBuffer, 0, bytesRead);
                     Console.WriteLine($"Response received: {response}");
 
-                    // Safely add to connected clients
+                    // safely add to connected clients
                     if (this.Home_Page != null)
                     {
                         this.Home_Page.connectedClients.Add(sessionID, tcpClient);
@@ -148,7 +148,7 @@ namespace Aegis
                 tcpClient.Close();
                 this.Close();
             }
-        }
+        } //The working TCP connection used to test messages being sent to the host machine... for some reason this code does not work in the message window as it keeps getting blocked by the host
 
 
         private void HandleResponse(string responseMessage)
@@ -195,11 +195,11 @@ namespace Aegis
             {
                 Console.WriteLine($"Error processing response: {ex.Message}");
             }
-        }
+        } //Old function to handle the response to a session get.
 
         public void Refresh_Sessions()
         {
             this.Home_Page.Refresh_Sessions();
-        }
+        } //Refreshes the sessions in the homepage.D
     }
 }
