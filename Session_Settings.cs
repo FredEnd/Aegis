@@ -22,7 +22,7 @@ namespace Aegis
         public Settings Settings;
 
 
-        public Session_Settings(List<int> Ports, string IPaddress, string pcName, Home_Page home_page, Settings CurrentAppSettings)
+        public Session_Settings(List<int> Ports, string IPaddress, string pcName, Home_Page home_page, Settings CurrentAppSettings) //Initiates the form and compiles the data that is offered to the user to make a session
         {
             InitializeComponent();
 
@@ -59,37 +59,36 @@ namespace Aegis
             "AES",
             "RSA",
             "DES"
-        };
+        }; //Stores the encryption Algorithms
 
         public void Refresh_Sessions()
         {
-            Home_Page.Messages_Panel.Controls.Clear();
-
-            var chatSessions = DB.LoadChatSessions();
-            if (chatSessions == null || chatSessions.Count == 0)
-            {
-                Console.WriteLine("NO SESSIONS LOADED: NULL OR EMPTY");
-            }
-            else
-            {
-                foreach (var session in chatSessions)
-                {
-                    ChatSessionButton newChat = new ChatSessionButton(session.SessionID, session.CreatedAt, Settings, pcName, IPaddress, Ports);
-                    newChat.InitializeButton();
-                    Home_Page.Messages_Panel.Controls.Add(newChat.GetButton());
-                }
-            }   
-        }
+            Home_Page.Refresh_Sessions();
+        } //Refreshes the homepage form sessions
 
         private void Create_Session_Click(object sender, EventArgs e)
         {
             var SessionIDInput = SessionID_Input.Text;
+            if (string.IsNullOrWhiteSpace(SessionIDInput))
+            {
+                MessageBox.Show("Session ID cannot be null or empty.");
+                return;
+            }
             Console.WriteLine(SessionIDInput);
 
+            if (PortsCombo.SelectedItem == null)
+            {
+                MessageBox.Show("No port selected.");
+                return;
+            }
             var SelectedPort = Convert.ToInt32(PortsCombo.SelectedItem);
-
             Console.WriteLine($"{SelectedPort}, -- Selected");
 
+            if (EncryptionCombo.SelectedItem == null)
+            {
+                MessageBox.Show("No encryption method selected.");
+                return;
+            }
             string encryptionMethod = EncryptionCombo.SelectedItem.ToString();
 
             Session newSession = new Session(SessionIDInput, pcName, encryptionMethod, SelectedPort);
@@ -97,6 +96,9 @@ namespace Aegis
             newSession.Add_Session();
 
             Refresh_Sessions();
-        }
+
+            this.Close();
+
+        } //takes the data from the text box and the comboboxes and creates a new session
     }
 }

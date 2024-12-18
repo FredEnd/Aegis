@@ -16,7 +16,7 @@ namespace Aegis
         private Button closeButton;
         private Settings Settings;
 
-        public ScrollableMessageBox(string content, Settings appSettings)
+        public ScrollableMessageBox(string content, Settings appSettings) 
         {
 
             this.Text = "Database Content";
@@ -41,6 +41,6 @@ namespace Aegis
 
             this.Controls.Add(richTextBox);
             this.Controls.Add(closeButton);
-        }
+        } // Boots up a textbox so that can be used to display data and show the user dataD
     }
 }

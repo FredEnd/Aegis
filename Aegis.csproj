@@ -158,6 +158,12 @@
     <Compile Include="DataInput.Designer.cs">
       <DependentUpon>DataInput.cs</DependentUpon>
     </Compile>
+    <Compile Include="EmojiForm.cs">
+      <SubType>Form</SubType>
+    </Compile>
+    <Compile Include="EmojiForm.Designer.cs">
+      <DependentUpon>EmojiForm.cs</DependentUpon>
+    </Compile>
     <Compile Include="Home_Page.cs">
       <SubType>Form</SubType>
     </Compile>

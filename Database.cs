@@ -27,10 +27,9 @@ namespace LocalDatabaseApp
 
             if (!File.Exists(dbFilePath))
             {
-                SQLiteConnection.CreateFile(dbFilePath); // Create the database file at the correct path
+                SQLiteConnection.CreateFile(dbFilePath); // create the database file at the correct path
                 Console.WriteLine("DATABASE CREATED SUCCESSFULLY");
 
-                // Create the tables in the new database
                 using (SQLiteConnection connection = new SQLiteConnection($"Data Source={dbFilePath};Version=3;"))
                 {
                     connection.Open();
@@ -69,9 +68,9 @@ namespace LocalDatabaseApp
                         Message_Content TEXT NOT NULL,
                         Direction TEXT CHECK(Direction IN ('sent', 'received')) NOT NULL,
                         SentAt TIMESTAMP DEFAULT (datetime(CURRENT_TIMESTAMP, 'localtime')),
-                        FOREIGN KEY (SessionID) REFERENCES Sessions(SessionID) ON DELETE CASCADE,
-                        FOREIGN KEY (UserID) REFERENCES Users(UserName)
+                        FOREIGN KEY (SessionID) REFERENCES Sessions(SessionID) ON DELETE CASCADE
                     );
+
                     CREATE TABLE IF NOT EXISTS Files (
                         FileID INTEGER PRIMARY KEY AUTOINCREMENT,
                         SessionID TEXT NOT NULL,
@@ -95,7 +94,7 @@ namespace LocalDatabaseApp
             {
                 Console.WriteLine("DB EXISTS");
             }
-        }
+        } // Checks the database if it is in the app data file or not or if it exists
 
         //-------------------------------------------------------------------------------------------------
 
@@ -144,7 +143,7 @@ namespace LocalDatabaseApp
             return allData.ToString();
         } //Recalls all of the information form the database
 
-        public static async Task NewMessageFromClientAsync(string messageInput, string sessionID, string ClientID)
+        public static async Task NewMessageFromClientAsync(string messageInput, string sessionID, string ClientID) //A message from the user on this machine to be sent...
         {
             try
             {
@@ -207,7 +206,7 @@ namespace LocalDatabaseApp
             }
 
             return chatSessions;
-        }
+        } //Loads the chat sessions from the datbase
 
         public static List<(string HostUserID, string Encryption, int portNum)> LoadSessionSettings(string sessionID)
         {
@@ -245,11 +244,11 @@ namespace LocalDatabaseApp
             }
 
             return settingsList;
-        }
+        } //loads the information about the sessions
 
         //-------------------------------------------------------------------------------------------------
 
-        public static async Task<List<(string MessageContent, string Direction, string SentAt, string UserID)>> GetMessagesBySessionAsync(string sessionId)
+        public static async Task<List<(string MessageContent, string Direction, string SentAt, string UserID)>> GetMessagesBySessionAsync(string sessionId) //Gets the messages tied to that session
         {
             string connectionString = $"Data Source={dbFilePath};Version=3;";
             List<(string MessageContent, string Direction, string SentAt, string UserID)> messages = new List<(string, string, string, string)>();
@@ -375,7 +374,7 @@ namespace LocalDatabaseApp
                     }
                 }
             }
-        }
+        } //Test function to write messages into the database to test the sessions
 
         public static void Create_Session(string sessionID, string HostID, string Encryption, int Port)
         {
@@ -409,10 +408,11 @@ namespace LocalDatabaseApp
                     }
                 }
             }
-        }
+        } //Function to create a session
 
-        public static void Create_Message(string sessionID, string userID, string messageContent, string direction)
+        public static void Create_Message(string sessionID, string userID, string messageContent, string direction) //Function to create a message
         {
+            Console.WriteLine($"creating message {userID}, {messageContent}");
             using (SQLiteConnection connection = new SQLiteConnection($"Data Source={dbFilePath};Version=3;"))
             {
                 connection.Open();
